@@ -4,7 +4,7 @@ public class ShopsDataParsingService(ShopProductsGeneralizer shopProductsGeneral
 {
     private readonly ShopProductsGeneralizer _shopProductsGeneralizer = shopProductsGeneralizer;
     private readonly IEnumerable<IShopDataRetriever> _shopDataRetrievers = shopDataRetrievers;
-    private readonly TimeSpan _interval = TimeSpan.FromSeconds(10);
+    private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)

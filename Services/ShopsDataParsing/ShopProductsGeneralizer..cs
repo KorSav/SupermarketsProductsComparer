@@ -16,14 +16,12 @@ public class ShopProductsGeneralizer
             imageBaseUrls.Add(
                 shopType,
                 configuration.GetSection($"ShopDataRetrievers:{shopName}:ImageUrl")
-                    .Get<string>() ??
-                    throw new InvalidOperationException($"Url for {shopName} images not found in appsetting.json")
+                    .Get<string?>() ?? string.Empty
             );
             productBaseUrls.Add(
                 shopType,
                 configuration.GetSection($"ShopDataRetrievers:{shopName}:ProductUrl")
-                    .Get<string>() ??
-                    throw new InvalidOperationException($"Url for {shopName} products not found appsetting.json")
+                    .Get<string?>() ?? string.Empty
             );
         }
     }
