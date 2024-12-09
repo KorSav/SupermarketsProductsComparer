@@ -15,7 +15,7 @@ public class ShopsDataParsingService(ShopProductsGeneralizer shopProductsGeneral
                 List<GeneralProduct> generalProducts = _shopProductsGeneralizer.Generalize(products);
                 foreach (var product in generalProducts)
                 {
-                    Console.WriteLine($"{product.Name}: {product.Price}UAH per {product.Measure} from {product.Shop}");
+                    Console.WriteLine($"{product.Name}: {product.Price}UAH per {product.Measure} from {product.Shop}, product {product.FullLinkProduct}, image {product.FullLinkImage}");
                 }
             }
             await Task.Delay(_interval, stoppingToken);
