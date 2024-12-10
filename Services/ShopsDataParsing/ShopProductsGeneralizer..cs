@@ -41,8 +41,6 @@ public class ShopProductsGeneralizer
             generalProduct.FullLinkProduct = productBaseUrls[shopProduct.Shop] + shopProduct.LinkProduct;
             generalProduct.Shop = shopProduct.Shop;
             generalProducts.Add(generalProduct);
-            Console.WriteLine($"Shop product: {shopProduct.Price} for {shopProduct.Ratio}");
-            Console.WriteLine($"Generalized product: {generalProduct.Price} for {generalProduct.Measure}");
         }
         return generalProducts;
     }

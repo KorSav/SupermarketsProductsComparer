@@ -7,8 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
-// builder.Services.AddSingleton<IShopDataRetriever, SilpoDataRetriever>();
-// builder.Services.AddSingleton<IShopDataRetriever, FozzyDataRetirever>();
+builder.Services.AddSingleton<IShopDataRetriever, SilpoDataRetriever>();
+builder.Services.AddSingleton<IShopDataRetriever, FozzyDataRetirever>();
 builder.Services.AddSingleton<IShopDataRetriever, ForaDataRetriever>();
 builder.Services.AddSingleton<ShopProductsGeneralizer>();
 builder.Services.AddHostedService<ShopsDataParsingService>();
