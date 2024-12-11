@@ -3,7 +3,7 @@ using program.Domain.Enums;
 
 namespace program.Domain;
 
-public class Measure
+public class Measure: IEnumClass<MeasureId>
 {
     public MeasureId Id { get; set; }
     [MaxLength(5)]

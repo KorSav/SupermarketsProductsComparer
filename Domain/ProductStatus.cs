@@ -3,7 +3,7 @@ using program.Domain.Enums;
 
 namespace program.Domain;
 
-public class ProductStatus
+public class ProductStatus: IEnumClass<ProductStatusId>
 {
     public ProductStatusId Id { get; set; }
 
