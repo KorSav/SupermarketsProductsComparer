@@ -1,14 +1,10 @@
-using System.ComponentModel.DataAnnotations;
-using System.Runtime.InteropServices.Marshalling;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using HtmlAgilityPack.CssSelectors.NetCore;
 using Microsoft.AspNetCore.WebUtilities;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using program.Services.ShopsDataParsing.Attributes;
-using program.Services.ShopsDataParsing.Enums;
+using program.Domain.Enums;
 using program.Services.ShopsDataParsing.Exceptions;
 
 namespace program.Services.ShopsDataParsing.Fozzy;
@@ -33,10 +29,10 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
         ]);
         _driver = new ChromeDriver(options);
         _baseUrl = configuration
-            .GetSection($"ShopDataRetrievers:{ShopType.Fozzy}:WebsiteUrl")
-            .Get<string>() ?? throw new MissingOptionException("WebsiteUrl", ShopType.Fozzy);
+            .GetSection($"ShopDataRetrievers:{ShopId.Fozzy}:WebsiteUrl")
+            .Get<string>() ?? throw new MissingOptionException("WebsiteUrl", ShopId.Fozzy);
         _obligatoryParams = configuration
-            .GetSection($"ShopDataRetrievers:{ShopType.Fozzy}:ObligatoryQueryParams")
+            .GetSection($"ShopDataRetrievers:{ShopId.Fozzy}:ObligatoryQueryParams")
             .Get<Dictionary<string, string>>();
         _productsCountToRetrieve = configuration
             .GetSection("CountOfProductsToRetrieve")
@@ -53,7 +49,7 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
         var searchInfo = searchInfoElement.InnerHtml;
         var match = ProductsCountRegex().Match(searchInfo);
         if (!match.Success)
-            throw new ShopProductParsingException("Failed to get amount of all products found", searchInfo, ProductsCountRegex(), ShopType.Fozzy, _productNameToSearch);
+            throw new ShopProductParsingException("Failed to get amount of all products found", searchInfo, ProductsCountRegex(), ShopId.Fozzy, _productNameToSearch);
         if (!int.TryParse(match.Groups[1].Value, out int total))
             throw new ConversionException(match.Groups[1].Value, total.GetType());
         _productsCountToRetrieve = Math.Min(_productsCountToRetrieve, total);

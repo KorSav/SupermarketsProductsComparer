@@ -1,4 +1,4 @@
-using program.Services.ShopsDataParsing.Enums;
+using program.Domain.Enums;
 
 namespace program.Services.ShopsDataParsing;
 
@@ -12,7 +12,7 @@ public class GeneralProduct
 
     public string FullLinkImage { get; set; } = null!;
 
-    public MeasureType Measure { get; set; }
+    public MeasureId MeasureId { get; set; }
 
-    public ShopType Shop { get; set; }
+    public ShopId ShopId { get; set; }
 }

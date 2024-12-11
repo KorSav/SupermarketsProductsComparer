@@ -1,4 +1,4 @@
-using program.Services.ShopsDataParsing.Enums;
+using program.Domain.Enums;
 
 namespace program.Services.ShopsDataParsing;
 
@@ -14,6 +14,6 @@ public interface IShopProduct
 
     string Ratio { get; set; }
 
-    ShopType Shop { get; set; }
+    ShopId ShopId { get; set; }
 
 }

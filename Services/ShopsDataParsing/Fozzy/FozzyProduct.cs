@@ -1,8 +1,8 @@
 using HtmlAgilityPack.CssSelectors.NetCore;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
-using program.Services.ShopsDataParsing.Enums;
 using program.Services.ShopsDataParsing.Exceptions;
+using program.Domain.Enums;
 
 namespace program.Services.ShopsDataParsing.Fozzy;
 
@@ -18,7 +18,7 @@ public partial class FozzyProduct : IShopProduct
 
     public string Ratio { get; set; } = null!;
 
-    public ShopType Shop { get; set; } = ShopType.Fozzy;
+    public ShopId ShopId { get; set; } = ShopId.Fozzy;
 
     private HtmlNode QueryFromByCss(HtmlNode root, string cssSelector)
     {

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.WebUtilities;
+using program.Domain.Enums;
 using program.Services.ShopsDataParsing.Attributes;
-using program.Services.ShopsDataParsing.Enums;
 
 namespace program.Services.ShopsDataParsing.Silpo;
 
@@ -10,10 +10,10 @@ public class SilpoDataRetriever(IConfiguration configuration, HttpClient httpCli
     private HttpClient _httpClient = httpClient;
 
     private readonly string _baseUrl = configuration
-        .GetSection($"ShopDataRetrievers:{ShopType.Silpo}:WebsiteUrl")
-        .Get<string>() ?? throw new InvalidOperationException($"Url for {ShopType.Silpo} shop not found appsetting.json");
+        .GetSection($"ShopDataRetrievers:{ShopId.Silpo}:WebsiteUrl")
+        .Get<string>() ?? throw new InvalidOperationException($"Url for {ShopId.Silpo} shop not found appsetting.json");
     private readonly Dictionary<string, string>? _obligatoryParams = configuration
-        .GetSection($"ShopDataRetrievers:{ShopType.Silpo}:ObligatoryQueryParams")
+        .GetSection($"ShopDataRetrievers:{ShopId.Silpo}:ObligatoryQueryParams")
         .Get<Dictionary<string, string>>();
 
     private readonly int _productsCountToRetrieve = configuration

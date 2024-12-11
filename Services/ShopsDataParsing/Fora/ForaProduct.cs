@@ -1,5 +1,5 @@
+using program.Domain.Enums;
 using program.Services.ShopsDataParsing.Attributes;
-using program.Services.ShopsDataParsing.Enums;
 
 namespace program.Services.ShopsDataParsing.Fora;
 
@@ -20,5 +20,5 @@ public class ForaProduct : IShopProduct
     [AutoParse("unit")]
     public string Ratio { get; set; } = null!;
 
-    public ShopType Shop { get; set; } = ShopType.Fora;
+    public ShopId ShopId { get; set; } = ShopId.Fora;
 }

@@ -1,6 +1,5 @@
-using System.Data;
 using System.Text.RegularExpressions;
-using program.Services.ShopsDataParsing.Enums;
+using program.Domain.Enums;
 
 namespace program.Utils;
 
@@ -8,7 +7,7 @@ public static partial class ProductConverter
 {
     [GeneratedRegex(@"((?:\d+\*)?(?:\d+[.,])?\d*)([\p{IsCyrillic}a-zA-Z]+)")]
     private static partial Regex RatioRegex();
-    public static (decimal price, MeasureType measure) GeneralizePrice(decimal price, string ratio)
+    public static (decimal price, MeasureId measure) GeneralizePrice(decimal price, string ratio)
     {
         var match = RatioRegex().Match(ratio);
         if (!match.Success) throw new ArgumentException($"Failed to analyze ratio: '{ratio}'");
@@ -18,11 +17,11 @@ public static partial class ProductConverter
         string qualifier = match.Groups[2].Value;
         return qualifier switch
         {
-            "кг" => (price / amount, MeasureType.Kilogram),
-            "г" => (price * 1000 / amount, MeasureType.Kilogram),
-            "л" => (price / amount, MeasureType.Litre),
-            "мл" => (price * 1000 / amount, MeasureType.Litre),
-            "шт" => (price / amount, MeasureType.Number),
+            "кг" => (price / amount, MeasureId.Kg),
+            "г" => (price * 1000 / amount, MeasureId.Kg),
+            "л" => (price / amount, MeasureId.L),
+            "мл" => (price * 1000 / amount, MeasureId.L),
+            "шт" => (price / amount, MeasureId.No),
             _ => throw new ArgumentException($"Unknown literal '{qualifier}' from '{ratio}' to specify n='{amount}' of m='{qualifier}'")
         };
     }

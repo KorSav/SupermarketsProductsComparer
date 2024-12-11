@@ -1,5 +1,5 @@
+using program.Domain.Enums;
 using program.Services.ShopsDataParsing.Attributes;
-using program.Services.ShopsDataParsing.Enums;
 
 namespace program.Services.ShopsDataParsing.Silpo;
 
@@ -20,5 +20,5 @@ public class SilpoProduct : IShopProduct
     [AutoParse("displayRatio")]
     public string Ratio { get; set; } = null!;
 
-    public ShopType Shop { get; set; } = ShopType.Silpo;
+    public ShopId ShopId { get; set; } = ShopId.Silpo;
 }

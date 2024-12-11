@@ -1,25 +1,25 @@
-using program.Services.ShopsDataParsing.Enums;
+using program.Domain.Enums;
 using program.Utils;
 
 namespace program.Services.ShopsDataParsing;
 
 public class ShopProductsGeneralizer
 {
-    private readonly Dictionary<ShopType, string> imageBaseUrls = [];
-    private readonly Dictionary<ShopType, string> productBaseUrls = [];
+    private readonly Dictionary<ShopId, string> imageBaseUrls = [];
+    private readonly Dictionary<ShopId, string> productBaseUrls = [];
 
     public ShopProductsGeneralizer(IConfiguration configuration)
     {
-        foreach (ShopType shopType in Enum.GetValues(typeof(ShopType)))
+        foreach (ShopId shopId in Enum.GetValues(typeof(ShopId)))
         {
-            string shopName = Enum.GetName(typeof(ShopType), shopType)!;
+            string shopName = Enum.GetName(typeof(ShopId), shopId)!;
             imageBaseUrls.Add(
-                shopType,
+                shopId,
                 configuration.GetSection($"ShopDataRetrievers:{shopName}:ImageUrl")
                     .Get<string?>() ?? string.Empty
             );
             productBaseUrls.Add(
-                shopType,
+                shopId,
                 configuration.GetSection($"ShopDataRetrievers:{shopName}:ProductUrl")
                     .Get<string?>() ?? string.Empty
             );
@@ -35,11 +35,11 @@ public class ShopProductsGeneralizer
             {
                 Name = shopProduct.Name
             };
-            (generalProduct.Price, generalProduct.Measure) = ProductConverter
+            (generalProduct.Price, generalProduct.MeasureId) = ProductConverter
                 .GeneralizePrice(shopProduct.Price, shopProduct.Ratio);
-            generalProduct.FullLinkImage = imageBaseUrls[shopProduct.Shop] + shopProduct.LinkImage;
-            generalProduct.FullLinkProduct = productBaseUrls[shopProduct.Shop] + shopProduct.LinkProduct;
-            generalProduct.Shop = shopProduct.Shop;
+            generalProduct.FullLinkImage = imageBaseUrls[shopProduct.ShopId] + shopProduct.LinkImage;
+            generalProduct.FullLinkProduct = productBaseUrls[shopProduct.ShopId] + shopProduct.LinkProduct;
+            generalProduct.ShopId = shopProduct.ShopId;
             generalProducts.Add(generalProduct);
         }
         return generalProducts;
