@@ -58,6 +58,20 @@ public class AppDbContext : DbContext
             .HasConversion<int>();
         modelBuilder.Entity<ProductStatus>()
             .HasData(GetAllInstancesOf<ProductStatus, ProductStatusId>());
+
+        modelBuilder.Entity<User>()
+            .HasData([new(){
+                Id=-1,
+                Name="admin",
+                Email="admin@gmail.com",
+                PasswordHash="admin"
+            }]);
+        modelBuilder.Entity<Request>()
+            .HasData([
+                new(){Name = "м'ясо", UserId=-1},
+                new(){Name = "овочі", UserId=-1},
+                new(){Name = "хліб", UserId=-1},
+            ]);
     }
 
     private static IEnumerable<T> GetAllInstancesOf<T, TEnum>()
