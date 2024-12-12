@@ -12,5 +12,5 @@ public class Request
     [Key]
     public string Name { get; set; } = string.Empty;
 
-    public User User { get; set; } = new();
+    public User User { get; set; } = null!;
 }

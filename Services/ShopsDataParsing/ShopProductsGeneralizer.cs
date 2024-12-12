@@ -33,9 +33,10 @@ public class ShopProductsGeneralizer
         {
             GeneralProduct generalProduct = new()
             {
-                Name = shopProduct.Name
+                Name = shopProduct.Name + ", " + shopProduct.Ratio,
+                PriceInitial = shopProduct.Price
             };
-            (generalProduct.Price, generalProduct.MeasureId) = ProductConverter
+            (generalProduct.PriceUnified, generalProduct.MeasureId) = ProductConverter
                 .GeneralizePrice(shopProduct.Price, shopProduct.Ratio);
             generalProduct.FullLinkImage = imageBaseUrls[shopProduct.ShopId] + shopProduct.LinkImage;
             generalProduct.FullLinkProduct = productBaseUrls[shopProduct.ShopId] + shopProduct.LinkProduct;

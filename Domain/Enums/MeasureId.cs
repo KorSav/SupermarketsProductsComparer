@@ -4,5 +4,6 @@ public enum MeasureId
 {
     Kg,
     L,
+    M,
     No
 }

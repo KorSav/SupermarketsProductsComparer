@@ -12,25 +12,30 @@ public class Product
     public ShopId ShopId { get; set; }
 
     [Key]
+    [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
 
     [Required]
     [Precision(14, 2)]
-    public decimal Price { get; set; }
+    public decimal PriceUnified { get; set; }
 
-    [MaxLength(100)]
+    [Required]
+    [Precision(14, 2)]
+    public decimal PriceInitial { get; set; }
+
+    [MaxLength(2048)]
     public string FullLinkProduct { get; set; } = string.Empty;
 
-    [MaxLength(100)]
+    [MaxLength(2048)]
     public string FullLinkImage { get; set; } = string.Empty;
 
     [Required]
     public MeasureId MeasureId { get; set; }
-    public Measure Measure { get; set; } = new();
+    public Measure Measure { get; set; } = null!;
 
     [Required]
     public ProductStatusId ProductStatusId { get; set; }
-    public ProductStatus ProductStatus { get; set; } = new();
+    public ProductStatus ProductStatus { get; set; } = null!;
 
-    public Shop Shop { get; set; } = new();
+    public Shop Shop { get; set; } = null!;
 }

@@ -6,7 +6,9 @@ public class GeneralProduct
 {
     public string Name { get; set; } = null!;
 
-    public decimal Price { get; set; }
+    public decimal PriceUnified { get; set; }
+
+    public decimal PriceInitial { get; set; }
 
     public string FullLinkProduct { get; set; } = null!;
 
