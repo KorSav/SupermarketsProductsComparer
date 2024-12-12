@@ -21,7 +21,8 @@ public static partial class ProductConverter
             "г" => (price * 1000 / amount, MeasureId.Kg),
             "л" => (price / amount, MeasureId.L),
             "мл" => (price * 1000 / amount, MeasureId.L),
-            "шт" => (price / amount, MeasureId.No),
+            "шт" or "бух" => (price / amount, MeasureId.No), // буханка
+            "м" => (price / amount, MeasureId.M),
             _ => throw new ArgumentException($"Unknown literal '{qualifier}' from '{ratio}' to specify n='{amount}' of m='{qualifier}'")
         };
     }

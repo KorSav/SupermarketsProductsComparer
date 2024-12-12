@@ -7,22 +7,32 @@ using program.Services.ShopsDataParsing.Attributes;
 
 namespace program.Services.ShopsDataParsing.Fora;
 
-public class ForaDataRetriever(IConfiguration configuration, HttpClient httpClient) : IShopDataRetriever
+public class ForaDataRetriever : IShopDataRetriever
 {
-    private HttpClient _httpClient = httpClient;
+    private HttpClient _httpClient;
 
-    private readonly string _baseUrl = configuration
-        .GetSection($"ShopDataRetrievers:{ShopId.Fora}:WebsiteUrl")
-        .Get<string>() ?? throw new InvalidOperationException($"Url for {ShopId.Fora} shop not found appsetting.json");
-    private readonly Dictionary<string, string>? _obligatoryParams = configuration
-        .GetSection($"ShopDataRetrievers:{ShopId.Fora}:ObligatoryQueryParams")
-        .Get<Dictionary<string, string>>();
+    private readonly string _baseUrl;
+    private readonly Dictionary<string, string>? _obligatoryParams;
 
-    private readonly int _productsCountToRetrieve = configuration
-        .GetSection("CountOfProductsToRetrieve")
-        .Get<int>();
+    private readonly int _productsCountToRetrieve;
 
     private string _productNameToSearch = null!;
+
+    public ForaDataRetriever(IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    {
+        _httpClient = httpClientFactory.CreateClient();
+        _httpClient.DefaultRequestHeaders
+            .Add("Host", "api.catalog.ecom.fora.ua");
+        _baseUrl = configuration
+            .GetSection($"ShopDataRetrievers:{ShopId.Fora}:WebsiteUrl")
+            .Get<string>() ?? throw new InvalidOperationException($"Url for {ShopId.Fora} shop not found appsetting.json");
+        _obligatoryParams = configuration
+            .GetSection($"ShopDataRetrievers:{ShopId.Fora}:ObligatoryQueryParams")
+            .Get<Dictionary<string, string>>();
+        _productsCountToRetrieve = configuration
+            .GetSection("CountOfProductsToRetrieve")
+            .Get<int>();
+    }
 
     private async Task<HttpResponseMessage> QueryProducts()
     {
@@ -60,8 +70,6 @@ public class ForaDataRetriever(IConfiguration configuration, HttpClient httpClie
                 MediaTypeNames.Application.Json
             )
         };
-        _httpClient.DefaultRequestHeaders
-            .Add("Host", "api.catalog.ecom.fora.ua");
         HttpResponseMessage response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
         return response;

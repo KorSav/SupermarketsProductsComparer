@@ -11,16 +11,15 @@ namespace program.Services.ShopsDataParsing.Fozzy;
 
 public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
 {
-    private HttpClient _httpClient;
     private readonly IWebDriver _driver;
     private readonly string _baseUrl;
     private readonly Dictionary<string, string>? _obligatoryParams;
     private int _productsCountToRetrieve;
+    private TimeSpan _paginationDelay;
     private string _productNameToSearch = null!;
 
-    public FozzyDataRetirever(IConfiguration configuration, HttpClient httpClient)
+    public FozzyDataRetirever(IConfiguration configuration)
     {
-        _httpClient = httpClient;
         var options = new ChromeOptions();
         options.AddArguments([
             "--headless",
@@ -37,6 +36,9 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
         _productsCountToRetrieve = configuration
             .GetSection("CountOfProductsToRetrieve")
             .Get<int>();
+        _paginationDelay = TimeSpan.FromSeconds(
+            configuration.GetRequiredSection("Delays:PaginationSecs").Get<double>()
+        );
     }
     private void UpdateProductsCountToRetrieve(HtmlDocument htmlDoc)
     {
@@ -82,11 +84,9 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
     {
         _productNameToSearch = searchQuery;
         int currentPage = 1;
-        System.Console.WriteLine("Navigating to url...");
         HtmlDocument htmlDoc = await GetHtmlDocument(currentPage++);
         UpdateProductsCountToRetrieve(htmlDoc);
         if (_productsCountToRetrieve == 0) return [];
-        System.Console.WriteLine("Parsing...");
         List<IShopProduct> retrievedProducts = new(_productsCountToRetrieve);
         bool retrieveNextPage = true;
         while (retrieveNextPage)
@@ -100,9 +100,9 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
                     break;
                 }
             }
+            await Task.Delay(_paginationDelay);
             htmlDoc = await GetHtmlDocument(currentPage++);
         }
-        System.Console.WriteLine("Parsed");
         return retrievedProducts;
     }
 
