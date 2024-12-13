@@ -7,4 +7,6 @@ public interface IProductRepository{
     Task MapAllProductsAsync(ProductStatusId statusId);
     Task SaveAllAsync(List<Product> products);
     Task DeleteAllWithStatusAsync(ProductStatusId statusId);
+    IQueryable<Product> FindByQuery(string query);
+    IQueryable<Product> GetAll();
 }

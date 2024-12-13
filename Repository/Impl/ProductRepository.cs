@@ -16,6 +16,18 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
             .ExecuteDeleteAsync();
     }
 
+    public IQueryable<Product> FindByQuery(string query)
+    {
+        return GetAll()
+            .Where(p => EF.Functions.Like(p.Name.ToLower(), $"%{query.ToLower()}%"));
+    }
+
+    public IQueryable<Product> GetAll()
+    {
+        return _dbContext.Products
+            .AsNoTracking();
+    }
+
     public async Task MapAllProductsAsync(ProductStatusId statusId)
     {
         await _dbContext.Products.ExecuteUpdateAsync(prod =>
