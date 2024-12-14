@@ -5,7 +5,7 @@ namespace program.Utils;
 
 public static partial class ProductConverter
 {
-    [GeneratedRegex(@"((?:\d+\*)?(?:\d+[.,])?\d*)([\p{IsCyrillic}a-zA-Z]+)")]
+    [GeneratedRegex(@"((?:\d+\*)?(?:\d+[.,])?\d*)\s*([\p{IsCyrillic}a-zA-Z]+)")]
     private static partial Regex RatioRegex();
     public static (decimal price, MeasureId measure) GeneralizePrice(decimal price, string ratio)
     {

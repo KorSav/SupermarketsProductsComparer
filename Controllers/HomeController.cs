@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using program.Controllers.Enums;
 using program.Domain;
 using program.Domain.Mappings;
 using program.Models;
@@ -17,13 +18,13 @@ public class HomeController : Controller
         _productService = productService;
     }
 
-    public async Task<IActionResult> Index(string? find, int page = 1, int pageSize = 15)
+    public async Task<IActionResult> Index(string? find, int page = 1, int pageSize = 24, SortBy sortBy = SortBy.Name, SortOrder sortOrder = SortOrder.Asc)
     {
         PaginatedList<Product> products;
         if (find is null || find.Trim() == string.Empty)
-            products = await _productService.GetAllProducts(page, pageSize);
+            products = await _productService.GetAllProducts(page, pageSize, sortBy, sortOrder);
         else
-            products = await _productService.FindProductsByQueryAsync(find, page, pageSize);
+            products = await _productService.FindProductsByQueryAsync(find, page, pageSize, sortBy, sortOrder);
         var productViewModels = products.ToProductViewModels();
         return View(productViewModels);
     }

@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using program.Controllers.Enums;
 using program.Domain;
 using program.Domain.Enums;
 using program.Repository.Data;
@@ -16,16 +18,33 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
             .ExecuteDeleteAsync();
     }
 
-    public IQueryable<Product> FindByQuery(string query)
+    public IQueryable<Product> FindByQuery(string query, SortBy sortBy, Controllers.Enums.SortOrder sortOrder)
     {
-        return GetAll()
-            .Where(p => EF.Functions.Like(p.Name.ToLower(), $"%{query.ToLower()}%"));
+        return ApplyOrdering(
+            _dbContext.Products
+                .AsNoTracking()
+                .Where(p => EF.Functions.Like(p.Name.ToLower(), $"%{query.ToLower()}%"))
+            , sortBy, sortOrder
+        );
     }
 
-    public IQueryable<Product> GetAll()
+    private IQueryable<Product> ApplyOrdering(IQueryable<Product> products, SortBy sortBy, Controllers.Enums.SortOrder sortOrder){
+        return sortBy switch
+        {
+            SortBy.Name => sortOrder == Controllers.Enums.SortOrder.Asc
+                ? products.OrderBy(p => p.Name)
+                : products.OrderByDescending(p => p.Name),
+            SortBy.UnifiedPrice => sortOrder == Controllers.Enums.SortOrder.Asc
+                ? products.OrderBy(p => p.PriceUnified)
+                : products.OrderByDescending(p => p.PriceUnified),
+            _ => throw new NotImplementedException()
+        };
+    }
+
+    public IQueryable<Product> GetAll(SortBy sortBy, Controllers.Enums.SortOrder sortOrder)
     {
-        return _dbContext.Products
-            .AsNoTracking();
+        var products = _dbContext.Products.AsNoTracking();
+        return ApplyOrdering(products, sortBy, sortOrder);
     }
 
     public async Task MapAllProductsAsync(ProductStatusId statusId)

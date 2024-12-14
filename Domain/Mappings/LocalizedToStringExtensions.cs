@@ -10,7 +10,7 @@ public static class LocalizedToStringExtensions
         MeasureId.L => "л",
         MeasureId.M => "м",
         MeasureId.No => "шт",
-        _ => string.Empty
+        _ => throw new NotImplementedException()
     };
 
     public static string ToLocalString(this ShopId shopId) => shopId switch
@@ -18,6 +18,6 @@ public static class LocalizedToStringExtensions
         ShopId.Silpo => "Сільпо",
         ShopId.Fora => "Фора",
         ShopId.Fozzy => "Фоззі",
-        _ => string.Empty
+        _ => throw new NotImplementedException()
     };
 }

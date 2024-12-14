@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using program.Repository;
 using program.Repository.Data;
 using program.Repository.Impl;
+using program.Services;
 using program.Services.ShopsDataParsing;
 using program.Services.ShopsDataParsing.Fora;
 using program.Services.ShopsDataParsing.Fozzy;
@@ -22,6 +23,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IRequestRepository, RequestRepository>();
+builder.Services.AddScoped<ProductService>();
 
 var app = builder.Build();
 
@@ -34,6 +36,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}");
 
 app.Run();
