@@ -4,7 +4,8 @@
 @{
     ViewData["Title"] = "Product List";
     var sortBy = Context.Request.Query["sortBy"];
-    var sortOrder = Context.Request.Query["sortOrder"];
+    var sortOrder = Context.Request.Query.ContainsKey("sortOrder") ?
+        Context.Request.Query["sortOrder"].ToString(): "Asc";
     var findQuery = Context.Request.Query["find"];
 }
 
