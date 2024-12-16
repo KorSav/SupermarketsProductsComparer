@@ -1,0 +1,232 @@
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loginModalLabel">Вхід / Реєстрація</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <ul class="nav nav-tabs" id="authTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" id="login-tab" data-bs-toggle="tab" href="#login" role="tab"
+                        aria-controls="login" aria-selected="true">Вхід</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="register-tab" data-bs-toggle="tab" href="#register" role="tab"
+                        aria-controls="register" aria-selected="false">Реєстрація</a>
+                </li>
+            </ul>
+            <div class="tab-content" id="authTabsContent">
+                <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
+                    <form id="loginForm" method="post">
+                        <div id="loginErrorMessages" class="alert alert-danger d-none" role="alert"></div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="loginUsername" class="form-label">Ім'я</label>
+                                <input type="text" class="form-control" id="loginUsername" name="username">
+                            </div>
+                            <div class="mb-3">
+                                <label for="loginEmail" class="form-label">Пошта</label>
+                                <input type="text" class="form-control" id="loginEmail" name="email">
+                            </div>
+                            <div class="mb-3">
+                                <label for="loginPassword" class="form-label">Пароль</label>
+                                <input type="password" class="form-control" id="loginPassword" name="password" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+                            <button type="submit" class="btn btn-primary">Увійти</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
+                    <form id="registerForm" method="post">
+                        <div id="registerErrorMessages" class="alert alert-danger d-none" role="alert"></div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="registerUsername" class="form-label">Ім'я</label>
+                                <input type="text" class="form-control" id="registerUsername" name="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerEmail" class="form-label">Пошта</label>
+                                <input type="email" class="form-control" id="registerEmail" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerPassword" class="form-label">Пароль</label>
+                                <input type="password" class="form-control" id="registerPassword" name="password"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerConfirmPassword" class="form-label">Підтвердження паролю</label>
+                                <input type="password" class="form-control" id="registerConfirmPassword"
+                                    name="passwordDup" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+                            <button type="submit" class="btn btn-primary">Зареєструватися</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="./_ValidationScriptsPartial.cshtml"></partial>
+<script>
+    $(document).ready(function () {
+        // Validation
+        $("#loginForm").validate({
+            rules: {
+                username: {
+                    required: function (element) {
+                        return $("#loginEmail").val() === "";
+                    }
+                },
+                email: {
+                    required: function (element) {
+                        return $("#loginUsername").val() === "";
+                    },
+                    email: true
+                },
+                password: {
+                    required: true
+                }
+            },
+            messages: {
+                username: {
+                    required: "Введіть ім'я або пошту"
+                },
+                email: {
+                    required: "Введіть пошту або ім'я",
+                    email: "Некоректний формат пошти"
+                },
+                password: "Введіть пароль"
+            },
+            errorClass: "text-danger",
+            highlight: function (element) {
+                $(element).addClass("is-invalid");
+            },
+            unhighlight: function (element) {
+                $(element).removeClass("is-invalid");
+            }
+        });
+
+        $("#registerForm").validate({
+            rules: {
+                username: {
+                    required: true
+                },
+                email: {
+                    required: true,
+                    email: true
+                },
+                password: {
+                    required: true
+                },
+                passwordDup: {
+                    required: true,
+                    equalTo: "#registerPassword"
+                }
+            },
+            messages: {
+                username: {
+                    required: "Введіть ім'я"
+                },
+                email: {
+                    required: "Введіть пошту",
+                    email: "Некоректний формат пошти"
+                },
+                password: "Введіть пароль",
+                passwordDup: "Паролі не співпадають"
+            },
+            errorClass: "text-danger",
+            highlight: function (element) {
+                $(element).addClass("is-invalid");
+            },
+            unhighlight: function (element) {
+                $(element).removeClass("is-invalid");
+            }
+        });
+
+        // Form submission
+        $("#loginForm").on("submit", function (e) {
+            e.preventDefault();
+            if (!$("#loginForm").valid()) {
+                return;
+            }
+            const formData = {
+                Name: $("#loginUsername").val(),
+                Password: $("#loginPassword").val()
+            };
+            $.ajax({
+                url: '/Auth/LogIn',
+                type: 'POST',
+                contentType: "application/json",
+                data: JSON.stringify(formData),
+                success: function () {
+                    location.reload();
+                },
+                error: function (xhr) {
+                    const errors = xhr.responseJSON?.errors || [];
+                    if (errors.length > 0) {
+                        let errorMessages = errors.join('<br>');
+                        $('#loginErrorMessages').html(errorMessages)
+                            .removeClass('d-none');
+                    } else {
+                        $('#loginErrorMessages').html(xhr.responseText || "Login failed.")
+                            .removeClass('d-none');
+                    }
+                }
+            });
+        });
+
+        $("#registerForm").on("submit", function (e) {
+            console.log("submission: ", e)
+            e.preventDefault();
+            if (!$("#registerForm").valid()) {
+                return;
+            }
+            const formData = {
+                Name: $("#registerUsername").val(),
+                Email: $("#registerEmail").val(),
+                Password: $("#registerPassword").val(),
+                PasswordDup: $("#registerConfirmPassword").val()
+            };
+            $.ajax({
+                url: '/Auth/SignIn',
+                type: 'POST',
+                contentType: "application/json",
+                data: JSON.stringify(formData),
+                success: function () {
+                    location.reload();
+                },
+                error: function (xhr) {
+                    const errors = xhr.responseJSON?.errors || [];
+                    if (errors.length > 0) {
+                        let errorMessages = errors.join('<br>');
+                        $('#registerErrorMessages').html(errorMessages)
+                            .removeClass('d-none');
+                    } else {
+                        $('#registerErrorMessages').html(xhr.responseText || "Registration failed")
+                            .removeClass('d-none');
+                    }
+                }
+            });
+        });
+
+        // Clearing modal window data after closing
+        $('#loginModal').on('hidden.bs.modal', function () {
+            $('#loginForm')[0].reset();
+            $('#loginForm .is-invalid').removeClass('is-invalid');
+            $('#loginForm .text-danger').remove();
+            $('#loginErrorMessages').html('').addClass('d-none');
+
+            $('#registerForm')[0].reset();
+            $('#registerForm .is-invalid').removeClass('is-invalid');
+            $('#registerForm .text-danger').remove();
+            $('#registerErrorMessages').html('').addClass('d-none');
+        });
+    });
+</script>

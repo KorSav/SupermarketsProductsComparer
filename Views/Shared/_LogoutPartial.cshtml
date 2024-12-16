@@ -1,0 +1,28 @@
+<div class="modal fade" id="logoutConfirmationModal" tabindex="-1" aria-labelledby="logoutConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logoutConfirmationModalLabel">Підтвердження дії</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Ви впевнені, що хочете вийти?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
+                <button type="button" class="btn btn-danger" id="confirmLogout">Так</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('#logoutButton').on('click', function(e) {
+        e.preventDefault();
+        $('#logoutConfirmationModal').modal('show');
+    });
+
+    $('#confirmLogout').on('click', function() {
+        $('#logoutForm').submit(); 
+    });
+</script>
