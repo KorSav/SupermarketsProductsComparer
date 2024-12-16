@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using program.Controllers.Enums;
 using program.Domain;
+using program.Domain.EnumClasses;
 using program.Domain.Enums;
 
 namespace program.Repository.Data;
@@ -58,6 +60,24 @@ public class AppDbContext : DbContext
             .HasConversion<int>();
         modelBuilder.Entity<ProductStatus>()
             .HasData(GetAllInstancesOf<ProductStatus, ProductStatusId>());
+
+        modelBuilder.Entity<Request>()
+            .Property(p => p.SortId)
+            .HasConversion<int>();
+        modelBuilder.Entity<Sort>()
+            .Property(s => s.Id)
+            .HasConversion<int>();
+        modelBuilder.Entity<Sort>()
+            .HasData(GetAllInstancesOf<Sort, SortBy>());
+
+        modelBuilder.Entity<Request>()
+            .Property(p => p.SortOrderId)
+            .HasConversion<int>();
+        modelBuilder.Entity<SortOrder>()
+            .Property(s => s.Id)
+            .HasConversion<int>();
+        modelBuilder.Entity<SortOrder>()
+            .HasData(GetAllInstancesOf<SortOrder, SortOrderId>());
 
         modelBuilder.Entity<User>()
             .HasData([new(){

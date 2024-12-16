@@ -13,6 +13,24 @@ public class RequestRepository : IRequestRepository
         _dbContext = dbContext;
     }
 
+    private bool IsSame(Request req1, Request req2){
+        return req1.Name == req2.Name 
+            && req1.UserId == req2.UserId;
+    }
+
+    public async Task DeleteRequestAsync(Request request)
+    {
+        await _dbContext.Requests
+            .Where(r => IsSame(r, request))
+            .ExecuteDeleteAsync();
+    }
+
+    public async Task<Request?> FindRequestAsync(Request request)
+    {
+        return await _dbContext.Requests.AsNoTracking()
+            .FirstOrDefaultAsync(r => IsSame(r, request));
+    }
+
     public async Task<List<Request>> GetAllRequestsOfUserAsync(int userId)
     {
         return await _dbContext.Requests
@@ -23,10 +41,7 @@ public class RequestRepository : IRequestRepository
     public async Task SaveRequestAsync(Request request)
     {
         Request? foundRequest = _dbContext.Requests
-            .FirstOrDefault(r =>
-                r.UserId == request.UserId &&
-                r.Name == request.Name
-            );
+            .FirstOrDefault(r => IsSame(r, request));
         if (foundRequest is not null) {
             return;
         }

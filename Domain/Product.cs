@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using program.Domain.EnumClasses;
 using program.Domain.Enums;
 
 namespace program.Domain;

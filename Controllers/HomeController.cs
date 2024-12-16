@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using program.Controllers.Enums;
 using program.Domain;
+using program.Domain.Enums;
 using program.Domain.Mappings;
 using program.Models;
 using program.Services;
@@ -18,7 +19,7 @@ public class HomeController : Controller
         _productService = productService;
     }
 
-    public async Task<IActionResult> Index(string? find, int page = 1, int pageSize = 24, SortBy sortBy = SortBy.Name, SortOrder sortOrder = SortOrder.Asc)
+    public async Task<IActionResult> Index(string? find, int page = 1, int pageSize = 24, SortBy sortBy = SortBy.Name, SortOrderId sortOrder = SortOrderId.Asc)
     {
         PaginatedList<Product> products;
         User? user = Domain.User.FromClaimsPrincipal(User);

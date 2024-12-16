@@ -1,3 +1,5 @@
+using program.Domain.Enums;
+
 namespace program.Controllers.Enums;
 
 public static class LocalizedToStringExtensions

@@ -1,4 +1,4 @@
-namespace program.Controllers.Enums;
+namespace program.Domain.Enums;
 
 public enum SortBy{
     Name,
