@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using System.Security.Principal;
 
 namespace program.Domain;
 
@@ -18,4 +20,13 @@ public class User
     [Required]
     [MaxLength(50)]
     public string Name { get; set; } = string.Empty;
+
+    public static User? FromClaimsPrincipal(ClaimsPrincipal cp){
+        if (cp.Identity!.IsAuthenticated is false)
+            return null;
+        return new() {
+            Name = cp.Identity!.Name!,
+            Email = cp.FindFirstValue(ClaimTypes.Email)!
+        };
+    }
 }

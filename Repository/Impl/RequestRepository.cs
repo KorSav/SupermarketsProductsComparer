@@ -19,4 +19,19 @@ public class RequestRepository : IRequestRepository
             .Where(r => r.UserId == userId)
             .ToListAsync();
     }
+
+    public async Task SaveRequestAsync(Request request)
+    {
+        Request? foundRequest = _dbContext.Requests
+            .FirstOrDefault(r =>
+                r.UserId == request.UserId &&
+                r.Name == request.Name
+            );
+        if (foundRequest is not null) {
+            return;
+        }
+        await _dbContext.Requests.AddAsync(request);
+        await _dbContext.SaveChangesAsync();
+        _dbContext.Requests.Entry(request).State = EntityState.Detached;
+    }
 }

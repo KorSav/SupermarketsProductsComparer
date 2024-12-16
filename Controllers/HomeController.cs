@@ -21,7 +21,10 @@ public class HomeController : Controller
     public async Task<IActionResult> Index(string? find, int page = 1, int pageSize = 24, SortBy sortBy = SortBy.Name, SortOrder sortOrder = SortOrder.Asc)
     {
         PaginatedList<Product> products;
-        if (find is null || find.Trim() == string.Empty)
+        User? user = Domain.User.FromClaimsPrincipal(User);
+        if (user is not null && find is not null)
+            products = await _productService.FindProductsByQueryAsync(user, find, page, pageSize, sortBy, sortOrder);
+        else if (find is null || find.Trim() == string.Empty)
             products = await _productService.GetAllProducts(page, pageSize, sortBy, sortOrder);
         else
             products = await _productService.FindProductsByQueryAsync(find, page, pageSize, sortBy, sortOrder);
