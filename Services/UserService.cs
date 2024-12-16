@@ -1,3 +1,4 @@
+using System.Security.Authentication;
 using Microsoft.AspNetCore.Identity;
 using program.Domain;
 using program.Repository;
@@ -36,5 +37,20 @@ public class UserService(IUserRepository userRepository)
         PasswordHasher<string> passwordHasher = new();
         var result = passwordHasher.VerifyHashedPassword(username, hashed, provided);
         return result != PasswordVerificationResult.Failed;
+    }
+
+    public async Task<User> RefillAsync(User user)
+    {
+        if (string.IsNullOrEmpty(user.Name) is false){
+            return await _userRepository.GetUserByNameAsync(user.Name)
+                ?? throw new AuthenticationException(
+                    $"User with name '{user.Name}' is not found in db");
+        } 
+        else if (string.IsNullOrEmpty(user.Email) is false){
+            return await _userRepository.GetUserByEmailAsync(user.Email)
+                ?? throw new AuthenticationException(
+                    $"User with email '{user.Email}' is not found in db");
+        }
+        throw new ArgumentException("Unable to refill user with null properties");
     }
 }

@@ -8,7 +8,7 @@ public static class UserMappingExtensions{
     public static User ToUser(this UserLogInViewModel userViewModel){
         return new User(){
             Name = userViewModel.Name,
-            // Email = userViewModel.Email,
+            Email = userViewModel.Email,
             PasswordHash = userViewModel.Password
         };
     }
