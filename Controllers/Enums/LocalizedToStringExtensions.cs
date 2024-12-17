@@ -8,6 +8,7 @@ public static class LocalizedToStringExtensions
     {
         SortBy.Name => "назвою",
         SortBy.UnifiedPrice => "загальною ціною",
+        SortBy.Price => "ціною",
         _ => throw new NotImplementedException()
     };
 }

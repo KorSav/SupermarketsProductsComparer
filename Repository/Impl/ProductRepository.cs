@@ -37,6 +37,9 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
             SortBy.UnifiedPrice => sortOrder == SortOrderId.Asc
                 ? products.OrderBy(p => p.PriceUnified)
                 : products.OrderByDescending(p => p.PriceUnified),
+            SortBy.Price => sortOrder == SortOrderId.Asc
+                ? products.OrderBy(p => p.PriceInitial)
+                : products.OrderByDescending(p => p.PriceInitial),
             _ => throw new NotImplementedException()
         };
     }
