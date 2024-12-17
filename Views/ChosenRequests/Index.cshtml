@@ -1,0 +1,82 @@
+@model Dictionary<RequestInfoViewModel, PaginatedList<ProductViewModel>>
+@{
+    ViewData["Title"] = "Обране";
+}
+
+<div class="container">
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center my-5" role="alert">
+            <i class="bi bi-info-circle"></i> У вас немає збережених запитів.
+            Натисніть <i class="bi bi-star"></i> поруч із кнопкою пошуку, щоб зберегти запит.
+        </div>
+    }
+    else
+    {
+        @foreach (var (request, products) in Model)
+        {
+            <div class="border rounded my-4">
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light">
+                    <div>
+                        <h4 class="text-primary mb-1">@request.Find</h4>
+                        @switch ((request.SortBy, request.SortOrder))
+                        {
+                            case (SortBy.UnifiedPrice, SortOrderId.Asc):
+                                <p class="mb-0 text-muted">Найдешевші товари</p>
+                                break;
+                            case (SortBy.UnifiedPrice, SortOrderId.Desc):
+                                <p class="mb-0 text-muted">Найдорожчі товари</p>
+                                break;
+                        }
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#group-@request.Find.Replace(" ", "-")" aria-expanded="true"
+                            aria-controls="group-@request.Find.Replace(" ", "-")">
+                            <i class="bi bi-chevron-down"></i> Згорнути/Розгорнути
+                        </button>
+                        <a asp-controller="Home" asp-action="Index" asp-route-find="@request.Find"
+                            asp-route-sortBy="@request.SortBy" asp-route-sortOrder="@request.SortOrder"
+                            class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-three-dots"></i> Більше
+                        </a>
+                    </div>
+                </div>
+
+                <div class="collapse" id="group-@request.Find.Replace(" ", "-")">
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 p-3">
+                        @foreach (var product in products)
+                        {
+                            <div class="col">
+                                <div class="card h-100">
+                                    <img src="@product.ImageLink" class="card-img-top" alt="@product.Name">
+                                    <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
+                                        @product.ShopName
+                                    </span>
+                                    <div class="card-body d-flex flex-column">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="badge bg-primary fs-6 px-2 py-1">
+                                                @product.Price грн
+                                            </span>
+                                            <span class="text-muted small">
+                                                @product.PriceUnified грн/@product.MeasureUnified
+                                            </span>
+                                        </div>
+                                        <h5 class="card-title text-center mb-3">@product.Name</h5>
+                                        <div class="mt-auto text-center">
+                                            <a href="@product.ProductLink" target="_blank" class="btn btn-outline-secondary w-100">
+                                                На сайт магазину
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+    }
+</div>

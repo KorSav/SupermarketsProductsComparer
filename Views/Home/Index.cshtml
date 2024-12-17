@@ -1,12 +1,27 @@
 ﻿@model PaginatedList<ProductViewModel>
 @using Microsoft.AspNetCore.Components;
+@using Microsoft.Extensions.Primitives
+@using program.Utils;
 
 @{
     ViewData["Title"] = "Product List";
-    var sortBy = Context.Request.Query["sortBy"];
-    var sortOrder = Context.Request.Query.ContainsKey("sortOrder") ?
-        Context.Request.Query["sortOrder"].ToString(): "Asc";
+
+    var sortBys = Context.Request.Query["sortBy"];
+    SortBy sortBy = SortBy.Name;
+    sortBy.SetFromFirstInIfExist(sortBys);
+
+    var sortOrders = Context.Request.Query["sortOrder"];
+    SortOrderId sortOrder = SortOrderId.Asc;
+    sortOrder.SetFromFirstInIfExist(sortOrders);
+    SortOrderId otherSortOrder = sortOrder switch {
+        SortOrderId.Asc => SortOrderId.Desc,
+        SortOrderId.Desc => SortOrderId.Asc,
+        _ => SortOrderId.Asc
+    };
+
     var findQuery = Context.Request.Query["find"];
+    bool showChooseOption = ViewBag.ShowChooseOption;
+    bool isOptionChosen = ViewBag.IsOptionChosen;
 }
 
 <div class="container">
@@ -14,25 +29,44 @@
         <div class="row align-items-center">
             <div class="col-md mb-2">
                 <div class="input-group">
-                    <input type="text" name="find" class="form-control" placeholder="Назва товару..." value="@Context.Request.Query["find"]" />
+                    <input type="text" name="find" class="form-control" placeholder="Назва товару..."
+                        value="@findQuery" />
                     <button class="btn btn-primary" type="submit">
                         <i class="bi bi-search"></i>
                     </button>
+                    @if (showChooseOption && isOptionChosen)
+                    {
+                        <button class="toggle-button toggled" type="button" id="saveQueryButton" title="Зберегти запит">
+                            <i class="bi bi-star-fill"></i>
+                        </button>
+                    }
+                    @if (showChooseOption && !isOptionChosen)
+                    {
+                        <button class="toggle-button" type="button" id="saveQueryButton" title="Прибрати зі збережених">
+                            <i class="bi bi-star"></i>
+                        </button>
+                    }
                 </div>
             </div>
             <div class="col-sm mb-2 d-flex align-items-center justify-content-end">
                 <label for="sortBy" class="me-2 mb-0">Порядок за:</label>
-                <select name="sortBy" class="form-select" class="form-select me-2" style="width: auto;" onchange="this.form.submit()">
-                        @foreach (var e in Enum.GetValues<SortBy>()){
-                            if (sortBy != e.ToString()){
-                                <option value="@e">@e.ToLocalString()</option>
-                            }else{
-                                <option value="@e" selected>@e.ToLocalString()</option>
-                            }
+                <select name="sortBy" class="form-select" class="form-select me-2" style="width: auto;"
+                    onchange="this.form.submit()">
+                    @foreach (var e in Enum.GetValues<SortBy>())
+                    {
+                        if (sortBy != e)
+                        {
+                            <option value="@e">@e.ToLocalString()</option>
                         }
+                        else
+                        {
+                            <option value="@e" selected>@e.ToLocalString()</option>
+                        }
+                    }
                 </select>
-                <button class="btn btn-outline-secondary" name="sortOrder" value="@(sortOrder == "Asc" ? "Desc" : "Asc")" type="submit">
-                    @if (sortOrder == "Asc")
+                <button class="btn btn-outline-secondary" name="sortOrder"
+                    value="@otherSortOrder" type="submit">
+                    @if (sortOrder == SortOrderId.Asc)
                     {
                         <i class="bi bi-sort-up"></i>
                     }
@@ -46,34 +80,34 @@
     </form>
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-    @foreach (var product in Model)
-    {
-        <div class="col">
-            <div class="card h-100">
-                <img src="@product.ImageLink" class="card-img-top" alt="@product.Name" loading="Lazy"> 
-                <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
-                    @product.ShopName
-                </span>
-                <div class="card-body d-flex flex-column">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-primary fs-6 px-2 py-1">
-                            @product.Price грн
-                        </span>
-                        <span class="text-muted small">
-                            @product.PriceUnified грн/@product.MeasureUnified
-                        </span>
-                    </div>
-                    <h5 class="card-title text-center mb-3">@product.Name</h5>
-                    <div class="mt-auto text-center">
-                        <a href="@product.ProductLink" target="_blank" class="btn btn-outline-secondary w-100">
-                            На сайт магазину
-                        </a>
+        @foreach (var product in Model)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <img src="@product.ImageLink" class="card-img-top" alt="@product.Name">
+                    <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
+                        @product.ShopName
+                    </span>
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-primary fs-6 px-2 py-1">
+                                @product.Price грн
+                            </span>
+                            <span class="text-muted small">
+                                @product.PriceUnified грн/@product.MeasureUnified
+                            </span>
+                        </div>
+                        <h5 class="card-title text-center mb-3">@product.Name</h5>
+                        <div class="mt-auto text-center">
+                            <a href="@product.ProductLink" target="_blank" class="btn btn-outline-secondary w-100">
+                                На сайт магазину
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    }
-</div>
+        }
+    </div>
 
 
     <nav aria-label="Product pagination" class="mt-4">
@@ -81,11 +115,8 @@
             @if (Model.HasPreviousPage)
             {
                 <li class="page-item">
-                    <a class="page-link"
-                        asp-route-find="@findQuery"
-                        asp-route-sortBy="@sortBy"
-                        asp-route-sortOrder="@sortOrder"
-                        asp-route-page="@(Model.PageNo - 1)"
+                    <a class="page-link" asp-route-find="@findQuery" asp-route-sortBy="@sortBy"
+                        asp-route-sortOrder="@sortOrder" asp-route-page="@(Model.PageNo - 1)"
                         asp-route-pageSize="@(Model.PageSize)">Назад</a>
                 </li>
             }
@@ -103,11 +134,8 @@
             @if (Model.HasNextPage)
             {
                 <li class="page-item">
-                    <a class="page-link"
-                        asp-route-find="@findQuery"
-                        asp-route-sortBy="@sortBy"
-                        asp-route-sortOrder="@sortOrder"
-                        asp-route-page="@(Model.PageNo + 1)"
+                    <a class="page-link" asp-route-find="@findQuery" asp-route-sortBy="@sortBy"
+                        asp-route-sortOrder="@sortOrder" asp-route-page="@(Model.PageNo + 1)"
                         asp-route-pageSize="@(Model.PageSize)">Вперед</a>
                 </li>
             }
@@ -148,4 +176,54 @@
     .btn-light i {
         font-size: 1.2rem;
     }
+
+    .toggle-button {
+        background: none;
+        border: none;
+        color: #0d6efd;
+        font-size: 1.5rem;
+        transition: transform 0.2s ease, color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .toggle-button.toggled {
+        color: #ffc107;
+    }
+
+    .toggle-button:hover {
+        transform: scale(1.2);
+        color: #0b5ed7;
+    }
+
+    .toggle-button.toggled:hover {
+        color: #e0a800;
+    }
 </style>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script>
+    console.log("loading")
+    $(document).ready(function () {
+        $("#saveQueryButton").on("click", function () {
+            $(this).toggleClass("toggled");
+            $(this).find("i").toggleClass("bi-star bi-star-fill");
+            const requestData = {
+                Find: "@Html.Raw(findQuery)",
+                SortBy: @((int)sortBy),
+                SortOrder: @((int)sortOrder)
+                }
+            $.ajax({
+                url: '/Request/Toggle',
+                type: 'POST',
+                contentType: "application/json",
+                data: JSON.stringify(requestData),
+                success: function () {
+                    console.log("Product search options saved");
+                },
+                error: function (xhr) {
+                    console.log("Product search options error:", xhr);
+                }
+            })
+        });
+    });
+</script>

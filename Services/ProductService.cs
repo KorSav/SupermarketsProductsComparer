@@ -27,20 +27,4 @@ public class ProductService(
         var products = _productRepository.FindByQuery(query, sortBy, sortOrder);
         return await PaginatedList<Product>.CreateAsync(products, pageNo, pageSize);
     }
-
-    public async Task<PaginatedList<Product>> FindProductsByQueryAsync(User user, string query, int pageNo, int pageSize, SortBy sortBy = SortBy.Name, SortOrderId sortOrder = SortOrderId.Asc)
-    {
-        var productList = await FindProductsByQueryAsync(query, pageNo, pageSize, sortBy, sortOrder);
-        if (productList.TotalPages == 0)
-            return productList;
-
-        User foundUser = await _userRepository.GetUserByNameAsync(user.Name) ??
-            throw new AuthenticationException($"User '{user.Name}' is not present in db");
-        Request request = new() {
-            UserId = foundUser.Id,
-            Name = query
-        };
-        await _requestRepository.SaveRequestAsync(request);
-        return productList;
-    }
 }

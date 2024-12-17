@@ -13,29 +13,41 @@ namespace program.Controllers;
 public class HomeController : Controller
 {
     private readonly ProductService _productService;
+    private readonly RequestService _requestService;
 
-    public HomeController(ProductService productService)
+    public HomeController(ProductService productService, RequestService requestService)
     {
         _productService = productService;
+        _requestService = requestService;
     }
 
     public async Task<IActionResult> Index(string? find, int page = 1, int pageSize = 24, SortBy sortBy = SortBy.Name, SortOrderId sortOrder = SortOrderId.Asc)
     {
+        bool isOptionChosen = false;
+        bool showChooseOption = false;
         PaginatedList<Product> products;
         User? user = Domain.User.FromClaimsPrincipal(User);
-        if (user is not null && find is not null)
-            products = await _productService.FindProductsByQueryAsync(user, find, page, pageSize, sortBy, sortOrder);
-        else if (find is null || find.Trim() == string.Empty)
+        if (user is not null && find is not null){
+            Request request = new(){
+                UserId = user.Id,
+                SortOrderId = sortOrder,
+                SortId = sortBy,
+                Name = find
+            };
+            bool isUpdated = await _requestService.UpdateRequestIfExistsAsync(request);
+            showChooseOption = true;
+            isOptionChosen = isUpdated;
+        }
+        if (find is null || find.Trim() == string.Empty){
             products = await _productService.GetAllProducts(page, pageSize, sortBy, sortOrder);
-        else
+        }
+        else{
             products = await _productService.FindProductsByQueryAsync(find, page, pageSize, sortBy, sortOrder);
-        var productViewModels = products.ToProductViewModels();
-        return View(productViewModels);
-    }
+        }
 
-    public IActionResult Privacy()
-    {
-        return View();
+        ViewBag.ShowChooseOption = showChooseOption;
+        ViewBag.IsOptionChosen = isOptionChosen;
+        return View(products.ToProductViewModels());
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

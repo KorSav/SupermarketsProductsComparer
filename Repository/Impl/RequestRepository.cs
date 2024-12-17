@@ -13,22 +13,23 @@ public class RequestRepository : IRequestRepository
         _dbContext = dbContext;
     }
 
-    private bool IsSame(Request req1, Request req2){
-        return req1.Name == req2.Name 
-            && req1.UserId == req2.UserId;
-    }
-
     public async Task DeleteRequestAsync(Request request)
     {
         await _dbContext.Requests
-            .Where(r => IsSame(r, request))
+            .Where(r =>
+                r.Name == request.Name 
+                && r.UserId == request.UserId
+            )
             .ExecuteDeleteAsync();
     }
 
     public async Task<Request?> FindRequestAsync(Request request)
     {
         return await _dbContext.Requests.AsNoTracking()
-            .FirstOrDefaultAsync(r => IsSame(r, request));
+            .FirstOrDefaultAsync(r => 
+                r.Name == request.Name 
+                && r.UserId == request.UserId
+            );
     }
 
     public async Task<List<Request>> GetAllRequestsOfUserAsync(int userId)
@@ -41,11 +42,16 @@ public class RequestRepository : IRequestRepository
     public async Task SaveRequestAsync(Request request)
     {
         Request? foundRequest = _dbContext.Requests
-            .FirstOrDefault(r => IsSame(r, request));
+            .FirstOrDefault(r =>
+                r.Name == request.Name 
+                && r.UserId == request.UserId
+            );
         if (foundRequest is not null) {
-            return;
+            foundRequest.SortId = request.SortId;
+            foundRequest.SortOrderId = request.SortOrderId;
+        } else {
+            await _dbContext.Requests.AddAsync(request);
         }
-        await _dbContext.Requests.AddAsync(request);
         await _dbContext.SaveChangesAsync();
         _dbContext.Requests.Entry(request).State = EntityState.Detached;
     }
