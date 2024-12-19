@@ -21,6 +21,7 @@ public class ShopsDataParsingService(ShopProductsGeneralizer shopProductsGeneral
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            var parsingStartTime = DateTime.UtcNow;
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var requestRepository = scope.ServiceProvider.GetRequiredService<IRequestRepository>();
@@ -45,7 +46,11 @@ public class ShopsDataParsingService(ShopProductsGeneralizer shopProductsGeneral
                 }
                 await productRepository.DeleteAllWithStatusAsync(ProductStatusId.NeedRemoval);
             }
-            await Task.Delay(_interval, stoppingToken);
+            var parsingDuration = DateTime.UtcNow - parsingStartTime;
+            var remainingTime = _interval - parsingDuration;
+            if (remainingTime > TimeSpan.Zero){
+                await Task.Delay(remainingTime, stoppingToken);
+            }
         }
     }
 

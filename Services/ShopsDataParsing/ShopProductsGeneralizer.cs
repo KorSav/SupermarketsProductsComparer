@@ -36,8 +36,14 @@ public class ShopProductsGeneralizer
                 Name = shopProduct.Name + ", " + shopProduct.Ratio,
                 PriceInitial = shopProduct.Price
             };
-            (generalProduct.PriceUnified, generalProduct.MeasureId) = ProductConverter
-                .GeneralizePrice(shopProduct.Price, shopProduct.Ratio);
+            try{
+                (generalProduct.PriceUnified, generalProduct.MeasureId) = ProductConverter
+                    .GeneralizePrice(shopProduct.Price, shopProduct.Ratio);
+            } catch (Exception ex){
+                System.Console.WriteLine($"Exception: {ex}");
+                continue;
+            }
+            if(shopProduct.ShopId == ShopId.Fozzy) System.Console.WriteLine("Fozzy product");
             generalProduct.FullLinkImage = imageBaseUrls[shopProduct.ShopId] + shopProduct.LinkImage;
             generalProduct.FullLinkProduct = productBaseUrls[shopProduct.ShopId] + shopProduct.LinkProduct;
             generalProduct.ShopId = shopProduct.ShopId;

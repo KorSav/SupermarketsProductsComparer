@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using program.Controllers.Enums;
 using program.Domain;
 using program.Domain.Enums;
@@ -18,7 +17,7 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
             .ExecuteDeleteAsync();
     }
 
-    public IQueryable<Product> FindByQuery(string query, SortBy sortBy, Controllers.Enums.SortOrder sortOrder)
+    public IQueryable<Product> FindByQuery(string query, SortBy sortBy, SortOrderId sortOrder)
     {
         return ApplyOrdering(
             _dbContext.Products
@@ -28,20 +27,24 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
         );
     }
 
-    private IQueryable<Product> ApplyOrdering(IQueryable<Product> products, SortBy sortBy, Controllers.Enums.SortOrder sortOrder){
+    private IQueryable<Product> ApplyOrdering(IQueryable<Product> products, SortBy sortBy, SortOrderId sortOrder)
+    {
         return sortBy switch
         {
-            SortBy.Name => sortOrder == Controllers.Enums.SortOrder.Asc
+            SortBy.Name => sortOrder == SortOrderId.Asc
                 ? products.OrderBy(p => p.Name)
                 : products.OrderByDescending(p => p.Name),
-            SortBy.UnifiedPrice => sortOrder == Controllers.Enums.SortOrder.Asc
+            SortBy.UnifiedPrice => sortOrder == SortOrderId.Asc
                 ? products.OrderBy(p => p.PriceUnified)
                 : products.OrderByDescending(p => p.PriceUnified),
+            SortBy.Price => sortOrder == SortOrderId.Asc
+                ? products.OrderBy(p => p.PriceInitial)
+                : products.OrderByDescending(p => p.PriceInitial),
             _ => throw new NotImplementedException()
         };
     }
 
-    public IQueryable<Product> GetAll(SortBy sortBy, Controllers.Enums.SortOrder sortOrder)
+    public IQueryable<Product> GetAll(SortBy sortBy, SortOrderId sortOrder)
     {
         var products = _dbContext.Products.AsNoTracking();
         return ApplyOrdering(products, sortBy, sortOrder);
@@ -59,9 +62,7 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
         {
             var existingProduct = await _dbContext.Products
                 .FirstOrDefaultAsync(p =>
-                    p.Name == product.Name &&
-                    p.ShopId == product.ShopId
-                );
+                    p.FullLinkProduct == product.FullLinkProduct);
             if (existingProduct is null)
             {
                 await _dbContext.AddAsync(product);

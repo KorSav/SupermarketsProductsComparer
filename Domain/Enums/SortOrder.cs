@@ -1,6 +1,6 @@
 namespace program.Controllers.Enums;
 
-public enum SortOrder{
+public enum SortOrderId{
     Asc,
     Desc,
 }

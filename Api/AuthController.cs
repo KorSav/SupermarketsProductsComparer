@@ -58,9 +58,11 @@ public class AuthController(UserService userService) : Controller
 
     private async Task SignInHttpCtxAsync(User user)
     {
+        User userFull = await _userService.RefillAsync(user);
         var claims = new List<Claim>() {
-            new(ClaimTypes.Name, user.Name),
-            new(ClaimTypes.Email, user.Email)
+            new("Id", userFull.Id.ToString()),
+            new(ClaimTypes.Name, userFull.Name),
+            new(ClaimTypes.Email, userFull.Email)
         };
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext!.SignInAsync(

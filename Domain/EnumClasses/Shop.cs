@@ -1,12 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using program.Domain.Enums;
 
-namespace program.Domain;
+namespace program.Domain.EnumClasses;
 
-public class ProductStatus: IEnumClass<ProductStatusId>
+public class Shop : IEnumClass<ShopId>
 {
-    public ProductStatusId Id { get; set; }
-
+    public ShopId Id { get; set; }
     [MaxLength(20)]
     public string Name { get; set; } = string.Empty;
 

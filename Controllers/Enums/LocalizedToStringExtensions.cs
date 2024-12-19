@@ -1,3 +1,5 @@
+using program.Domain.Enums;
+
 namespace program.Controllers.Enums;
 
 public static class LocalizedToStringExtensions
@@ -6,6 +8,7 @@ public static class LocalizedToStringExtensions
     {
         SortBy.Name => "назвою",
         SortBy.UnifiedPrice => "загальною ціною",
+        SortBy.Price => "ціною",
         _ => throw new NotImplementedException()
     };
 }
