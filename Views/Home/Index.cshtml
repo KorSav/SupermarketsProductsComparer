@@ -13,13 +13,15 @@
     var sortOrders = Context.Request.Query["sortOrder"];
     SortOrderId sortOrder = SortOrderId.Asc;
     sortOrder.SetFromFirstInIfExist(sortOrders);
-    SortOrderId otherSortOrder = sortOrder switch {
+    SortOrderId otherSortOrder = sortOrder switch
+    {
         SortOrderId.Asc => SortOrderId.Desc,
         SortOrderId.Desc => SortOrderId.Asc,
         _ => SortOrderId.Asc
     };
 
     var findQuery = Context.Request.Query["find"];
+    bool isProductsFound = Model != null && Model.Any();
     bool showChooseOption = ViewBag.ShowChooseOption;
     bool isOptionChosen = ViewBag.IsOptionChosen;
 }
@@ -34,13 +36,13 @@
                     <button class="btn btn-primary" type="submit">
                         <i class="bi bi-search"></i>
                     </button>
-                    @if (showChooseOption && isOptionChosen)
+                    @if (isProductsFound && showChooseOption && isOptionChosen)
                     {
                         <button class="toggle-button toggled" type="button" id="saveQueryButton" title="Зберегти запит">
                             <i class="bi bi-star-fill"></i>
                         </button>
                     }
-                    @if (showChooseOption && !isOptionChosen)
+                    @if (isProductsFound && showChooseOption && !isOptionChosen)
                     {
                         <button class="toggle-button" type="button" id="saveQueryButton" title="Прибрати зі збережених">
                             <i class="bi bi-star"></i>
@@ -64,8 +66,7 @@
                         }
                     }
                 </select>
-                <button class="btn btn-outline-secondary" name="sortOrder"
-                    value="@otherSortOrder" type="submit">
+                <button class="btn btn-outline-secondary" name="sortOrder" value="@otherSortOrder" type="submit">
                     @if (sortOrder == SortOrderId.Asc)
                     {
                         <i class="bi bi-sort-up"></i>
@@ -79,75 +80,87 @@
         </div>
     </form>
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-        @foreach (var product in Model)
-        {
-            <div class="col">
-                <div class="card h-100">
-                    <img src="@product.ImageLink" class="card-img-top" alt="@product.Name">
-                    <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
-                        @product.ShopName
-                    </span>
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-primary fs-6 px-2 py-1">
-                                @product.Price грн
-                            </span>
-                            <span class="text-muted small">
-                                @product.PriceUnified грн/@product.MeasureUnified
-                            </span>
-                        </div>
-                        <h5 class="card-title text-center mb-3">@product.Name</h5>
-                        <div class="mt-auto text-center">
-                            <a href="@product.ProductLink" target="_blank" class="btn btn-outline-secondary w-100">
-                                На сайт магазину
-                            </a>
+    @if (!isProductsFound)
+    {
+        <div class="col-12 text-center my-4">
+            <h4 class="text-warning">Товари не знайдено</h4>
+            <p class="text-muted">
+                Будь ласка, перевірте коректність запиту або спробуйте змінити пошукове слово.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var product in Model!)
+            {
+                <div class="col">
+                    <div class="card h-100">
+                        <img src="@product.ImageLink" class="card-img-top" alt="@product.Name">
+                        <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
+                            @product.ShopName
+                        </span>
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge bg-primary fs-6 px-2 py-1">
+                                    @product.Price грн
+                                </span>
+                                <span class="text-muted small">
+                                    @product.PriceUnified грн/@product.MeasureUnified
+                                </span>
+                            </div>
+                            <h5 class="card-title text-center mb-3">@Html.Raw(product.Name)</h5>
+                            <div class="mt-auto text-center">
+                                <a href="@product.ProductLink" target="_blank" class="btn btn-outline-secondary w-100">
+                                    На сайт магазину
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        }
+            }
+        </div>
+
+
+        <nav aria-label="Product pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-route-find="@findQuery" asp-route-sortBy="@sortBy"
+                            asp-route-sortOrder="@sortOrder" asp-route-page="@(Model.PageNo - 1)"
+                            asp-route-pageSize="@(Model.PageSize)">Назад</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Назад</span>
+                    </li>
+                }
+
+                <li class="page-item active">
+                    <span class="page-link">Сторінка @Model.PageNo з @Model.TotalPages</span>
+                </li>
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-route-find="@findQuery" asp-route-sortBy="@sortBy"
+                            asp-route-sortOrder="@sortOrder" asp-route-page="@(Model.PageNo + 1)"
+                            asp-route-pageSize="@(Model.PageSize)">Вперед</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Вперед</span>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
     </div>
-
-
-    <nav aria-label="Product pagination" class="mt-4">
-        <ul class="pagination justify-content-center">
-            @if (Model.HasPreviousPage)
-            {
-                <li class="page-item">
-                    <a class="page-link" asp-route-find="@findQuery" asp-route-sortBy="@sortBy"
-                        asp-route-sortOrder="@sortOrder" asp-route-page="@(Model.PageNo - 1)"
-                        asp-route-pageSize="@(Model.PageSize)">Назад</a>
-                </li>
-            }
-            else
-            {
-                <li class="page-item disabled">
-                    <span class="page-link">Назад</span>
-                </li>
-            }
-
-            <li class="page-item active">
-                <span class="page-link">Сторінка @Model.PageNo з @Model.TotalPages</span>
-            </li>
-
-            @if (Model.HasNextPage)
-            {
-                <li class="page-item">
-                    <a class="page-link" asp-route-find="@findQuery" asp-route-sortBy="@sortBy"
-                        asp-route-sortOrder="@sortOrder" asp-route-page="@(Model.PageNo + 1)"
-                        asp-route-pageSize="@(Model.PageSize)">Вперед</a>
-                </li>
-            }
-            else
-            {
-                <li class="page-item disabled">
-                    <span class="page-link">Вперед</span>
-                </li>
-            }
-        </ul>
-    </nav>
-</div>
 
 <style>
     .card {

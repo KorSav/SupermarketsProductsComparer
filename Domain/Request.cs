@@ -13,6 +13,7 @@ public class Request
     public int UserId { get; set; }
 
     [Key]
+    [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
 
     public SortBy SortId { get; set; }

@@ -8,12 +8,10 @@ namespace program.Domain;
 
 public class Product
 {
-    [Key]
     [ForeignKey(nameof(Shop))]
     public ShopId ShopId { get; set; }
 
-    [Key]
-    [MaxLength(100)]
+    [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
 
     [Required]
@@ -24,6 +22,7 @@ public class Product
     [Precision(14, 2)]
     public decimal PriceInitial { get; set; }
 
+    [Key]
     [MaxLength(2048)]
     public string FullLinkProduct { get; set; } = string.Empty;
 

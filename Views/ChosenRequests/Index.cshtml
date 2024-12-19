@@ -20,17 +20,24 @@
                 <div class="d-flex justify-content-between align-items-center p-3 bg-light">
                     <div>
                         <h4 class="text-primary mb-1">@request.Find</h4>
-                        <p class="mb-0 text-muted">
-                        @if (request.SortOrder == SortOrderId.Asc){
-                            <text>Найдешевші</text>
-                        }else{
-                            <text>Найдорожчі</text>
+                        @if (request.SortBy is SortBy.Price or SortBy.UnifiedPrice)
+                        {
+                            <p class="mb-0 text-muted">
+                                @if (request.SortOrder == SortOrderId.Asc)
+                                {
+                                    <text>Найдешевші</text>
+                                }
+                                else
+                                {
+                                    <text>Найдорожчі</text>
+                                }
+                                товари
+                                @if (request.SortBy == SortBy.UnifiedPrice)
+                                {
+                                    <text>за загальною ціною</text>
+                                }
+                            </p>
                         }
-                        товари
-                        @if (request.SortBy == SortBy.UnifiedPrice){
-                            <text>за загальною ціною</text>
-                        }
-                        </p>
                     </div>
                     <div>
                         <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"

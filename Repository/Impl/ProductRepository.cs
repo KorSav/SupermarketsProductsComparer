@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using program.Controllers.Enums;
 using program.Domain;
 using program.Domain.Enums;
@@ -28,7 +27,8 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
         );
     }
 
-    private IQueryable<Product> ApplyOrdering(IQueryable<Product> products, SortBy sortBy, SortOrderId sortOrder){
+    private IQueryable<Product> ApplyOrdering(IQueryable<Product> products, SortBy sortBy, SortOrderId sortOrder)
+    {
         return sortBy switch
         {
             SortBy.Name => sortOrder == SortOrderId.Asc
@@ -62,9 +62,7 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
         {
             var existingProduct = await _dbContext.Products
                 .FirstOrDefaultAsync(p =>
-                    p.Name == product.Name &&
-                    p.ShopId == product.ShopId
-                );
+                    p.FullLinkProduct == product.FullLinkProduct);
             if (existingProduct is null)
             {
                 await _dbContext.AddAsync(product);

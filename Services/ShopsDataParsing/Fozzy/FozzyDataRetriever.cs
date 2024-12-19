@@ -14,7 +14,8 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
     private readonly IWebDriver _driver;
     private readonly string _baseUrl;
     private readonly Dictionary<string, string>? _obligatoryParams;
-    private int _productsCountToRetrieve;
+    private readonly int _productsCountToRetrieve;
+    private int _remainingProducts;
     private TimeSpan _paginationDelay;
     private string _productNameToSearch = null!;
 
@@ -45,7 +46,7 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
         var searchInfoElement = htmlDoc.QuerySelector(".products-selection span");
         if (searchInfoElement is null)
         {
-            _productsCountToRetrieve = 0;
+            _remainingProducts = 0;
             return;
         }
         var searchInfo = searchInfoElement.InnerHtml;
@@ -54,7 +55,7 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
             throw new ShopProductParsingException("Failed to get amount of all products found", searchInfo, ProductsCountRegex(), ShopId.Fozzy, _productNameToSearch);
         if (!int.TryParse(match.Groups[1].Value, out int total))
             throw new ConversionException(match.Groups[1].Value, total.GetType());
-        _productsCountToRetrieve = Math.Min(_productsCountToRetrieve, total);
+        _remainingProducts = Math.Min(_productsCountToRetrieve, total);
     }
     private string GetQueryUrl(int page)
     {
@@ -86,15 +87,15 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
         int currentPage = 1;
         HtmlDocument htmlDoc = await GetHtmlDocument(currentPage++);
         UpdateProductsCountToRetrieve(htmlDoc);
-        if (_productsCountToRetrieve == 0) return [];
-        List<IShopProduct> retrievedProducts = new(_productsCountToRetrieve);
+        if (_remainingProducts == 0) return [];
+        List<IShopProduct> retrievedProducts = new(_remainingProducts);
         bool retrieveNextPage = true;
         while (retrieveNextPage)
         {
             foreach (FozzyProduct product in GetHtmlDocumentProducts(htmlDoc))
             {
                 retrievedProducts.Add(product);
-                if (--_productsCountToRetrieve == 0)
+                if (--_remainingProducts == 0)
                 {
                     retrieveNextPage = false;
                     break;
