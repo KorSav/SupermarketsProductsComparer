@@ -11,7 +11,7 @@ namespace program.Services.ShopsDataParsing.Fozzy;
 
 public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
 {
-    private readonly IWebDriver _driver;
+    private ChromeDriver _driver;
     private readonly string _baseUrl;
     private readonly Dictionary<string, string>? _obligatoryParams;
     private readonly int _productsCountToRetrieve;
@@ -21,13 +21,7 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
 
     public FozzyDataRetirever(IConfiguration configuration)
     {
-        var options = new ChromeOptions();
-        options.AddArguments([
-            "--headless",
-            "--disable-gpu",
-            "--no-sandbox"
-        ]);
-        _driver = new ChromeDriver(options);
+        _driver = CreateWebDriver();
         _baseUrl = configuration
             .GetSection($"ShopDataRetrievers:{ShopId.Fozzy}:WebsiteUrl")
             .Get<string>() ?? throw new MissingOptionException("WebsiteUrl", ShopId.Fozzy);
@@ -41,6 +35,18 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
             configuration.GetRequiredSection("Delays:PaginationSecs").Get<double>()
         );
     }
+
+    private static ChromeDriver CreateWebDriver(){
+        var options = new ChromeOptions();
+        options.AddArguments([
+            "--headless",
+            "--disable-gpu",
+            "--disable-dev-shm-usage",
+            "--no-sandbox"
+        ]);
+        return new ChromeDriver(options);
+    }
+
     private void UpdateProductsCountToRetrieve(HtmlDocument htmlDoc)
     {
         var searchInfoElement = htmlDoc.QuerySelector(".products-selection span");
@@ -73,6 +79,21 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
         string url = QueryHelpers.AddQueryString(_baseUrl, queryParams);
         return url;
     }
+    public async Task<HtmlDocument> GetHtmlDocumentWithRetries(int page, int retryCount){
+        for (int attempt = 0; attempt < retryCount; attempt++){
+            try {
+                return await GetHtmlDocument(page);
+            }
+            catch (WebDriverException ex){
+                System.Console.WriteLine("WebDriver disconnected. " +
+                    $"Reason: {ex.Message}\n"+
+                    $"Restarting... Attempt {attempt + 1}");
+                _driver.Quit();
+                _driver = CreateWebDriver();
+            }
+        }
+        throw new WebDriverException($"Failed to retrieve document after {retryCount} retries.");
+    }
     public async Task<HtmlDocument> GetHtmlDocument(int page)
     {
         string queryUrl = GetQueryUrl(page);
@@ -85,7 +106,7 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
     {
         _productNameToSearch = searchQuery;
         int currentPage = 1;
-        HtmlDocument htmlDoc = await GetHtmlDocument(currentPage++);
+        HtmlDocument htmlDoc = await GetHtmlDocumentWithRetries(currentPage++, 3);
         UpdateProductsCountToRetrieve(htmlDoc);
         if (_remainingProducts == 0) return [];
         List<IShopProduct> retrievedProducts = new(_remainingProducts);
@@ -110,13 +131,21 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
     private IEnumerable<FozzyProduct> GetHtmlDocumentProducts(HtmlDocument htmlDoc)
     {
         IList<HtmlNode> productsWithThumbnail = htmlDoc.QuerySelectorAll(".product-miniature");
-        foreach (HtmlNode productWithThumbnail in productsWithThumbnail)
-            yield return new FozzyProduct(productWithThumbnail);
+        foreach (HtmlNode productWithThumbnail in productsWithThumbnail){
+            FozzyProduct product;
+            try {
+                product = new FozzyProduct(productWithThumbnail);
+            }catch(Exception ex){
+                System.Console.WriteLine($"Exception: {ex.Message}\nFailed to get product from: \n{productWithThumbnail}");
+                continue;
+            }
+            yield return product;
+        }
     }
 
     public void Dispose()
     {
-        _driver.Quit();
+        _driver.Dispose();
     }
 
 
