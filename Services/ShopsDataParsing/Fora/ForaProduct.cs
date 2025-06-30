@@ -20,5 +20,5 @@ public class ForaProduct : IShopProduct
     [AutoParse("unit")]
     public string Ratio { get; set; } = null!;
 
-    public ShopId ShopId { get; set; } = ShopId.Fora;
+    public Shop ShopId { get; set; } = Shop.Fora;
 }

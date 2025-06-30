@@ -26,7 +26,7 @@ public class ShopsDataParsingService(ShopProductsGeneralizer shopProductsGeneral
             {
                 var requestRepository = scope.ServiceProvider.GetRequiredService<IRequestRepository>();
                 var productRepository = scope.ServiceProvider.GetRequiredService<IProductRepository>();
-                await productRepository.MapAllProductsAsync(ProductStatusId.NeedRemoval);
+                await productRepository.MapAllProductsAsync(ProductStatus.NeedRemoval);
                 var requests = await requestRepository.GetAllRequestsOfUserAsync(-1);
                 var lastRequest = requests.Last();
                 foreach (var request in requests)
@@ -44,7 +44,7 @@ public class ShopsDataParsingService(ShopProductsGeneralizer shopProductsGeneral
                     if (request != lastRequest)
                         await Task.Delay(_delayRequests, stoppingToken);
                 }
-                await productRepository.DeleteAllWithStatusAsync(ProductStatusId.NeedRemoval);
+                await productRepository.DeleteAllWithStatusAsync(ProductStatus.NeedRemoval);
             }
             var parsingDuration = DateTime.UtcNow - parsingStartTime;
             var remainingTime = _interval - parsingDuration;

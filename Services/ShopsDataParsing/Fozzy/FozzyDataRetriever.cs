@@ -23,10 +23,10 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
     {
         _driver = CreateWebDriver();
         _baseUrl = configuration
-            .GetSection($"ShopDataRetrievers:{ShopId.Fozzy}:WebsiteUrl")
-            .Get<string>() ?? throw new MissingOptionException("WebsiteUrl", ShopId.Fozzy);
+            .GetSection($"ShopDataRetrievers:{Shop.Fozzy}:WebsiteUrl")
+            .Get<string>() ?? throw new MissingOptionException("WebsiteUrl", Shop.Fozzy);
         _obligatoryParams = configuration
-            .GetSection($"ShopDataRetrievers:{ShopId.Fozzy}:ObligatoryQueryParams")
+            .GetSection($"ShopDataRetrievers:{Shop.Fozzy}:ObligatoryQueryParams")
             .Get<Dictionary<string, string>>();
         _productsCountToRetrieve = configuration
             .GetSection("CountOfProductsToRetrieve")
@@ -58,7 +58,7 @@ public partial class FozzyDataRetirever : IShopDataRetriever, IDisposable
         var searchInfo = searchInfoElement.InnerHtml;
         var match = ProductsCountRegex().Match(searchInfo);
         if (!match.Success)
-            throw new ShopProductParsingException("Failed to get amount of all products found", searchInfo, ProductsCountRegex(), ShopId.Fozzy, _productNameToSearch);
+            throw new ShopProductParsingException("Failed to get amount of all products found", searchInfo, ProductsCountRegex(), Shop.Fozzy, _productNameToSearch);
         if (!int.TryParse(match.Groups[1].Value, out int total))
             throw new ConversionException(match.Groups[1].Value, total.GetType());
         _remainingProducts = Math.Min(_productsCountToRetrieve, total);

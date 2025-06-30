@@ -1,6 +1,8 @@
-namespace program.Controllers.Enums;
+namespace program.Domain.Enums;
 
-public enum SortOrderId{
-    Asc,
-    Desc,
+// Do not change underlying values => one to one db ID mapping
+public enum SortOrder : byte
+{
+    Asc = 0,
+    Desc = 1,
 }

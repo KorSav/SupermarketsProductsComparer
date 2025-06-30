@@ -1,7 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using program.Controllers.Enums;
-using program.Domain.EnumClasses;
 using program.Domain.Enums;
 
 namespace program.Domain;
@@ -16,11 +14,9 @@ public class Request
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
 
-    public SortBy SortId { get; set; }
-    public Sort Sort { get; set; } = null!;
+    public SortBy Sort { get; set; }
 
-    public SortOrderId SortOrderId { get; set; }
-    public SortOrder SortOrder { get; set; } = null!;
+    public SortOrder SortOrder { get; set; }
 
     public User User { get; set; } = null!;
 }

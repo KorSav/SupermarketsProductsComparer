@@ -21,7 +21,7 @@ public class HomeController : Controller
         _requestService = requestService;
     }
 
-    public async Task<IActionResult> Index(string? find, int page = 1, int pageSize = 24, SortBy sortBy = SortBy.Name, SortOrderId sortOrder = SortOrderId.Asc)
+    public async Task<IActionResult> Index(string? find, int page = 1, int pageSize = 24, SortBy sortBy = SortBy.Name, SortOrder sortOrder = SortOrder.Asc)
     {
         bool isOptionChosen = false;
         bool showChooseOption = false;
@@ -30,8 +30,8 @@ public class HomeController : Controller
         if (user is not null && find is not null){
             Request request = new(){
                 UserId = user.Id,
-                SortOrderId = sortOrder,
-                SortId = sortBy,
+                SortOrder = sortOrder,
+                Sort = sortBy,
                 Name = find
             };
             bool isUpdated = await _requestService.UpdateRequestIfExistsAsync(request);

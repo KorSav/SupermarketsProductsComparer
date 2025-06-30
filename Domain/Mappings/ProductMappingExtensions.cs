@@ -1,4 +1,3 @@
-using System.Globalization;
 using program.Models;
 using program.Services.ShopsDataParsing;
 using program.Utils;
@@ -14,11 +13,11 @@ public static class ProductMappingExtensions
             Name = generalProduct.Name,
             FullLinkImage = generalProduct.FullLinkImage,
             FullLinkProduct = generalProduct.FullLinkProduct,
-            ShopId = generalProduct.ShopId,
-            MeasureId = generalProduct.MeasureId,
+            Shop = generalProduct.ShopId,
+            Measure = generalProduct.MeasureId,
             PriceUnified = generalProduct.PriceUnified,
             PriceInitial = generalProduct.PriceInitial,
-            ProductStatusId = Enums.ProductStatusId.Updated
+            ProductStatus = Enums.ProductStatus.Updated
         };
     }
 
@@ -29,8 +28,8 @@ public static class ProductMappingExtensions
             PriceUnified: product.PriceUnified.ToString("N"),
             ProductLink: product.FullLinkProduct,
             ImageLink: product.FullLinkImage,
-            MeasureUnified: product.MeasureId.ToLocalString(),
-            ShopName: product.ShopId.ToLocalString()
+            MeasureUnified: product.Measure.ToLocalString(),
+            ShopName: product.Shop.ToLocalString()
         );
     }
 

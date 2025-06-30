@@ -30,7 +30,7 @@ public class ChosenRequestsController : Controller
         {
             var productList = await _productService.FindProductsByQueryAsync(
                 request.Name, 1, NoProductsPerFind,
-                request.SortId, request.SortOrderId
+                request.Sort, request.SortOrder
             );
             productLists.Add(
                 request.ToRequestViewModel(),

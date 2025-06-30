@@ -10,10 +10,10 @@ public class SilpoDataRetriever(IConfiguration configuration, HttpClient httpCli
     private HttpClient _httpClient = httpClient;
 
     private readonly string _baseUrl = configuration
-        .GetSection($"ShopDataRetrievers:{ShopId.Silpo}:WebsiteUrl")
-        .Get<string>() ?? throw new InvalidOperationException($"Url for {ShopId.Silpo} shop not found appsetting.json");
+        .GetSection($"ShopDataRetrievers:{Shop.Silpo}:WebsiteUrl")
+        .Get<string>() ?? throw new InvalidOperationException($"Url for {Shop.Silpo} shop not found appsetting.json");
     private readonly Dictionary<string, string>? _obligatoryParams = configuration
-        .GetSection($"ShopDataRetrievers:{ShopId.Silpo}:ObligatoryQueryParams")
+        .GetSection($"ShopDataRetrievers:{Shop.Silpo}:ObligatoryQueryParams")
         .Get<Dictionary<string, string>>();
 
     private readonly int _productsCountToRetrieve = configuration

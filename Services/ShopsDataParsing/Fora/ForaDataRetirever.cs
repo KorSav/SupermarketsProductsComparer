@@ -24,10 +24,10 @@ public class ForaDataRetriever : IShopDataRetriever
         _httpClient.DefaultRequestHeaders
             .Add("Host", "api.catalog.ecom.fora.ua");
         _baseUrl = configuration
-            .GetSection($"ShopDataRetrievers:{ShopId.Fora}:WebsiteUrl")
-            .Get<string>() ?? throw new InvalidOperationException($"Url for {ShopId.Fora} shop not found appsetting.json");
+            .GetSection($"ShopDataRetrievers:{Shop.Fora}:WebsiteUrl")
+            .Get<string>() ?? throw new InvalidOperationException($"Url for {Shop.Fora} shop not found appsetting.json");
         _obligatoryParams = configuration
-            .GetSection($"ShopDataRetrievers:{ShopId.Fora}:ObligatoryQueryParams")
+            .GetSection($"ShopDataRetrievers:{Shop.Fora}:ObligatoryQueryParams")
             .Get<Dictionary<string, string>>();
         _productsCountToRetrieve = configuration
             .GetSection("CountOfProductsToRetrieve")

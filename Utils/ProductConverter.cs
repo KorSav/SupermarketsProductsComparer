@@ -7,7 +7,7 @@ public static partial class ProductConverter
 {
     [GeneratedRegex(@"((?:\d+\*)?(?:\d+[.,])?\d*)\s*([\p{IsCyrillic}a-zA-Z]+)")]
     private static partial Regex RatioRegex();
-    public static (decimal price, MeasureId measure) GeneralizePrice(decimal price, string ratio)
+    public static (decimal price, Measure measure) GeneralizePrice(decimal price, string ratio)
     {
         var match = RatioRegex().Match(ratio);
         if (!match.Success) throw new ArgumentException($"Failed to analyze ratio: '{ratio}'");
@@ -17,12 +17,12 @@ public static partial class ProductConverter
         string qualifier = match.Groups[2].Value;
         return qualifier switch
         {
-            "кг" => (price / amount, MeasureId.Kg),
-            "г" => (price * 1000 / amount, MeasureId.Kg),
-            "л" => (price / amount, MeasureId.L),
-            "мл" => (price * 1000 / amount, MeasureId.L),
-            "шт" or "бух" => (price / amount, MeasureId.No), // буханка
-            "м" => (price / amount, MeasureId.M),
+            "кг" => (price / amount, Measure.Kg),
+            "г" => (price * 1000 / amount, Measure.Kg),
+            "л" => (price / amount, Measure.L),
+            "мл" => (price * 1000 / amount, Measure.L),
+            "шт" or "бух" => (price / amount, Measure.No), // буханка
+            "м" => (price / amount, Measure.M),
             _ => throw new ArgumentException($"Unknown literal '{qualifier}' from '{ratio}' to specify n='{amount}' of m='{qualifier}'")
         };
     }

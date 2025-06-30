@@ -5,14 +5,14 @@ namespace program.Services.ShopsDataParsing;
 
 public class ShopProductsGeneralizer
 {
-    private readonly Dictionary<ShopId, string> imageBaseUrls = [];
-    private readonly Dictionary<ShopId, string> productBaseUrls = [];
+    private readonly Dictionary<Shop, string> imageBaseUrls = [];
+    private readonly Dictionary<Shop, string> productBaseUrls = [];
 
     public ShopProductsGeneralizer(IConfiguration configuration)
     {
-        foreach (ShopId shopId in Enum.GetValues(typeof(ShopId)))
+        foreach (Shop shopId in Enum.GetValues(typeof(Shop)))
         {
-            string shopName = Enum.GetName(typeof(ShopId), shopId)!;
+            string shopName = Enum.GetName(typeof(Shop), shopId)!;
             imageBaseUrls.Add(
                 shopId,
                 configuration.GetSection($"ShopDataRetrievers:{shopName}:ImageUrl")
@@ -43,7 +43,7 @@ public class ShopProductsGeneralizer
                 System.Console.WriteLine($"Exception: {ex}");
                 continue;
             }
-            if(shopProduct.ShopId == ShopId.Fozzy) System.Console.WriteLine("Fozzy product");
+            if(shopProduct.ShopId == Shop.Fozzy) System.Console.WriteLine("Fozzy product");
             generalProduct.FullLinkImage = imageBaseUrls[shopProduct.ShopId] + shopProduct.LinkImage;
             generalProduct.FullLinkProduct = productBaseUrls[shopProduct.ShopId] + shopProduct.LinkProduct;
             generalProduct.ShopId = shopProduct.ShopId;

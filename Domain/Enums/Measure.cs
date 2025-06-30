@@ -1,9 +1,10 @@
 namespace program.Domain.Enums;
 
 // Do not change underlying values => one to one db ID mapping
-public enum SortBy : byte
+public enum Measure : byte
 {
-    Name = 0,
-    UnifiedPrice = 1,
-    Price = 2,
+    Kg = 0,
+    L = 1,
+    M = 2,
+    No = 3,
 }

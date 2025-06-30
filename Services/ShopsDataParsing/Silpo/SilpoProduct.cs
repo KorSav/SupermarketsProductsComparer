@@ -20,5 +20,5 @@ public class SilpoProduct : IShopProduct
     [AutoParse("displayRatio")]
     public string Ratio { get; set; } = null!;
 
-    public ShopId ShopId { get; set; } = ShopId.Silpo;
+    public Shop ShopId { get; set; } = Shop.Silpo;
 }

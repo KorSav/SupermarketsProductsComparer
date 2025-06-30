@@ -14,7 +14,7 @@ public class GeneralProduct
 
     public string FullLinkImage { get; set; } = null!;
 
-    public MeasureId MeasureId { get; set; }
+    public Measure MeasureId { get; set; }
 
-    public ShopId ShopId { get; set; }
+    public Shop ShopId { get; set; }
 }

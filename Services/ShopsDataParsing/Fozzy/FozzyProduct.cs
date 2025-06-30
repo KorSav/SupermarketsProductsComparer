@@ -18,7 +18,7 @@ public partial class FozzyProduct : IShopProduct
 
     public string Ratio { get; set; } = null!;
 
-    public ShopId ShopId { get; set; } = ShopId.Fozzy;
+    public Shop ShopId { get; set; } = Shop.Fozzy;
 
     private HtmlNode QueryFromByCss(HtmlNode root, string cssSelector)
     {

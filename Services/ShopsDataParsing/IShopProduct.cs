@@ -14,6 +14,6 @@ public interface IShopProduct
 
     string Ratio { get; set; }
 
-    ShopId ShopId { get; set; }
+    Shop ShopId { get; set; }
 
 }

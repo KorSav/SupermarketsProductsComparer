@@ -1,16 +1,11 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using program.Domain.EnumClasses;
 using program.Domain.Enums;
 
 namespace program.Domain;
 
 public class Product
 {
-    [ForeignKey(nameof(Shop))]
-    public ShopId ShopId { get; set; }
-
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
 
@@ -29,13 +24,9 @@ public class Product
     [MaxLength(2048)]
     public string FullLinkImage { get; set; } = string.Empty;
 
-    [Required]
-    public MeasureId MeasureId { get; set; }
-    public Measure Measure { get; set; } = null!;
+    public Measure Measure { get; set; }
 
-    [Required]
-    public ProductStatusId ProductStatusId { get; set; }
-    public ProductStatus ProductStatus { get; set; } = null!;
+    public ProductStatus ProductStatus { get; set; }
 
-    public Shop Shop { get; set; } = null!;
+    public Shop Shop { get; set; }
 }

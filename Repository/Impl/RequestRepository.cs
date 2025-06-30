@@ -47,8 +47,8 @@ public class RequestRepository : IRequestRepository
                 && r.UserId == request.UserId
             );
         if (foundRequest is not null) {
-            foundRequest.SortId = request.SortId;
-            foundRequest.SortOrderId = request.SortOrderId;
+            foundRequest.Sort = request.Sort;
+            foundRequest.SortOrder = request.SortOrder;
         } else {
             await _dbContext.Requests.AddAsync(request);
         }

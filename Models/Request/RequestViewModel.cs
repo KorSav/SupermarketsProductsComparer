@@ -6,5 +6,5 @@ namespace program.Models.Request;
 public record RequestViewModel(
     string Find,
     SortBy SortBy,
-    SortOrderId SortOrder
+    SortOrder SortOrder
 );

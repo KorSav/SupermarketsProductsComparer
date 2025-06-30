@@ -11,13 +11,13 @@
     sortBy.SetFromFirstInIfExist(sortBys);
 
     var sortOrders = Context.Request.Query["sortOrder"];
-    SortOrderId sortOrder = SortOrderId.Asc;
+    SortOrder sortOrder = SortOrder.Asc;
     sortOrder.SetFromFirstInIfExist(sortOrders);
-    SortOrderId otherSortOrder = sortOrder switch
+    SortOrder otherSortOrder = sortOrder switch
     {
-        SortOrderId.Asc => SortOrderId.Desc,
-        SortOrderId.Desc => SortOrderId.Asc,
-        _ => SortOrderId.Asc
+        SortOrder.Asc => SortOrder.Desc,
+        SortOrder.Desc => SortOrder.Asc,
+        _ => SortOrder.Asc
     };
 
     var findQuery = Context.Request.Query["find"];
@@ -67,7 +67,7 @@
                     }
                 </select>
                 <button class="btn btn-outline-secondary" name="sortOrder" value="@otherSortOrder" type="submit">
-                    @if (sortOrder == SortOrderId.Asc)
+                    @if (sortOrder == SortOrder.Asc)
                     {
                         <i class="bi bi-sort-up"></i>
                     }
