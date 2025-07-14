@@ -1,17 +1,11 @@
-using PriceComparer.Domain.Measure;
-
 namespace PriceComparer.Domain;
 
-public class ProductPrice<TMeasure>(decimal price, TMeasure measure)
-    where TMeasure : MagnifiedMeasure
+public class ProductPrice(decimal price, double amount, Measure measure)
 {
     public decimal Price { get; private set; } = price;
-    public TMeasure Measure { get; private set; } = measure;
+    public double Amount { get; private set; } = amount;
+    public Measure Measure { get; private set; } = measure;
 
-    public void UpdateMeasure(TMeasure newMeasure)
-    {
-        decimal ratio = (decimal)(newMeasure.ScaleFactor / Measure.ScaleFactor);
-        Price *= ratio;
-        Measure = newMeasure;
-    }
+    public ProductPrice AsUnified() =>
+        new(Measure.Unify(Price), Measure.Unify(Amount), Measure.Unify());
 }
