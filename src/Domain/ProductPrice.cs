@@ -1,11 +1,25 @@
 namespace PriceComparer.Domain;
 
-public class ProductPrice(decimal price, double amount, Measure measure)
+public class ProductPrice
 {
-    public decimal Price { get; private set; } = price;
-    public double Amount { get; private set; } = amount;
-    public Measure Measure { get; private set; } = measure;
+    public decimal Price { get; private set; }
+    public double Amount { get; private set; }
+    public Measure Measure { get; private set; }
 
-    public ProductPrice AsUnified() =>
-        new(Measure.Unify(Price), Measure.Unify(Amount), Measure.Unify());
+    public ProductPrice(decimal price, double amount, Measure.Units measureUnit)
+        : this(price, amount, new Measure(measureUnit)) { }
+
+    ProductPrice(decimal price, double amount, Measure measure)
+    {
+        Price = price;
+        Amount = amount;
+        Measure = measure;
+    }
+
+    public ProductPrice ToUnified()
+    {
+        decimal unifiedPrice = Price * (decimal)Measure.UnifyRatio();
+        double unifiedAmount = Amount * Measure.UnifyRatio();
+        return new(unifiedPrice, unifiedAmount, Measure.Unify());
+    }
 }

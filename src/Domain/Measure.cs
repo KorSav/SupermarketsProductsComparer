@@ -2,46 +2,36 @@ namespace PriceComparer.Domain;
 
 public readonly struct Measure
 {
-    public readonly Unit Value => _value;
-    readonly Unit _value;
+    public readonly Units Unit { get; }
 
-    public Measure(Unit unit)
+    public Measure(Units unit)
     {
         if (!Enum.IsDefined(unit))
             throw new ArgumentException($"Invalid measure unit to set: {unit}");
-        _value = unit;
+        Unit = unit;
     }
 
-    public Measure Unify() => new(GetUnified(_value));
+    public Measure Unify() => new(GetUnified(Unit));
 
-    public double Unify(double value)
-    {
-        Unit unified = GetUnified(_value);
-        double ratio = GetScaleFactor(unified) / GetScaleFactor(_value);
-        return value * ratio;
-    }
+    /// <summary>
+    /// Multiply by this value to transform some value from current unit to unified one
+    /// </summary>
+    public double UnifyRatio() => GetScaleFactor(GetUnified(Unit)) / GetScaleFactor(Unit);
 
-    public decimal Unify(decimal value)
-    {
-        Unit unified = GetUnified(_value);
-        double ratio = GetScaleFactor(unified) / GetScaleFactor(_value);
-        return value * (decimal)ratio;
-    }
-
-    static Unit GetUnified(Unit unit)
+    static Units GetUnified(Units unit)
     {
         BaseUnit baseUnit = BaseUnitFrom(unit);
         return baseUnit switch
         {
-            BaseUnit.Gram => Unit.KiloGram,
-            BaseUnit.Litre or BaseUnit.Meter or BaseUnit.Amount => (Unit)baseUnit,
+            BaseUnit.Gram => Units.KiloGram,
+            BaseUnit.Litre or BaseUnit.Meter or BaseUnit.Amount => (Units)baseUnit,
             _ => throw new ArgumentOutOfRangeException(
                 $"Unsupported base unit code was given: {baseUnit}"
             ),
         };
     }
 
-    static double GetScaleFactor(Unit unit) =>
+    static double GetScaleFactor(Units unit) =>
         MagnifierFrom(unit) switch
         {
             Magnifier.Absent => 1,
@@ -53,11 +43,11 @@ public readonly struct Measure
             ),
         };
 
-    static BaseUnit BaseUnitFrom(Unit unit) => (BaseUnit)(byte)((byte)unit & ~_magnifierMask);
+    static BaseUnit BaseUnitFrom(Units unit) => (BaseUnit)(byte)((byte)unit & ~_magnifierMask);
 
-    static Magnifier MagnifierFrom(Unit unit) => (Magnifier)(byte)((byte)unit & _magnifierMask);
+    static Magnifier MagnifierFrom(Units unit) => (Magnifier)(byte)((byte)unit & _magnifierMask);
 
-    public enum Unit : byte
+    public enum Units : byte
     {
         Amount = BaseUnit.Amount,
         Meter = BaseUnit.Meter,
