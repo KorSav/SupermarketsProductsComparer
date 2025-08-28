@@ -1,0 +1,17 @@
+{
+  "Fora": {
+    "DelayBetweenRequests": "00:00:05",
+    "MaxProdCountPerRequest": "50",
+    "PaginationDelay": "00:00:03"
+  },
+  "Silpo": {
+    "DelayBetweenRequests": "00:00:05",
+    "MaxProdCountPerRequest": "50",
+    "PaginationDelay": "00:00:03"
+  },
+  "Fozzy": {
+    "DelayBetweenRequests": "00:00:05",
+    "MaxProdCountPerRequest": "50",
+    "PaginationDelay": "00:00:03"
+  }
+}

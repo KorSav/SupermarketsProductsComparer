@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.2" />
+    <PackageReference Include="HtmlAgilityPack.CssSelectors" Version="1.0.2" />
+    <PackageReference Include="Microsoft.extensions.configuration" Version="9.0.8" />
+    <PackageReference Include="Microsoft.extensions.configuration.binder" Version="9.0.8" />
+    <PackageReference Include="Microsoft.extensions.configuration.json" Version="9.0.8" />
+    <PackageReference Include="Microsoft.extensions.logging.abstractions" Version="9.0.8" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="./libsettings.json" CopyToOutputDirectory="Always"/>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>PriceComparer.ProductProvider</RootNamespace>
+  </PropertyGroup>
+
+</Project>

@@ -2,12 +2,10 @@ using PriceComparer.Application.Products.Types;
 
 namespace PriceComparer.Application.Products.DTOs;
 
-public record ProductDto(
-    Guid Id,
+public record ProductInfoDto(
     string Name,
     Domain.ProductPrice ProductPrice,
     string LinkProductShop,
     string LinkProductImage,
-    Shop Shop,
-    ProductStatus Status
+    Shop Shop
 );

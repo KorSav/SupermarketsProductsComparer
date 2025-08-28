@@ -11,8 +11,8 @@ public interface IProductRepository
         SortOptions sortOptions,
         CancellationToken cancellationToken
     );
-    Task<IList<StoredProductDto>> FindByNameAsync(
-        string query,
+    Task<IList<StoredProductDto>> FuzzyFindByNameAsync(
+        string prodName,
         DataWindow dataWindow,
         SortOptions sortOptions,
         CancellationToken cancellationToken
