@@ -1,12 +1,45 @@
+using PriceComparer.Application.Common;
 using PriceComparer.Application.Products.DTOs;
 using PriceComparer.Application.Products.Provider;
 using PriceComparer.Application.Products.Types;
 
 namespace PriceComparer.Application.Products;
 
-public class ProductService(IProductRepository productRepo)
+public class ProductService(IProductRepository productRepo) : IProductService
 {
     readonly IProductRepository _repo = productRepo;
+
+    public async Task<PaginatedList<ProductInfoDto>> GetAllProducts(
+        DataPage dataPage,
+        SortOptions sortOptions,
+        CancellationToken cancellationToken
+    )
+    {
+        var (products, total) = await _repo.GetAllAsync(
+            dataPage.ToWindow(),
+            sortOptions,
+            cancellationToken
+        );
+        var pinfos = products.Select(sp => sp.ProductDto).ToList();
+        return new(pinfos, total, dataPage);
+    }
+
+    public async Task<PaginatedList<ProductInfoDto>> FindProductsByNameAsync(
+        string prodName,
+        DataPage page,
+        SortOptions sortOptions,
+        CancellationToken cancellationToken
+    )
+    {
+        var (products, total) = await _repo.FuzzyFindByNameAsync(
+            prodName,
+            page.ToWindow(),
+            sortOptions,
+            cancellationToken
+        );
+        var pinfos = products.Select(sp => sp.ProductDto).ToList();
+        return new(pinfos, total, page);
+    }
 
     /// <summary>
     /// Adds data into product repo infinitely with given time interval until cancelled

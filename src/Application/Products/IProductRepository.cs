@@ -6,12 +6,12 @@ namespace PriceComparer.Application.Products;
 
 public interface IProductRepository
 {
-    Task<IList<StoredProductDto>> GetAllAsync(
+    Task<(IEnumerable<StoredProductDto> products, int totalProductsCount)> GetAllAsync(
         DataWindow dataWindow,
         SortOptions sortOptions,
         CancellationToken cancellationToken
     );
-    Task<IList<StoredProductDto>> FuzzyFindByNameAsync(
+    Task<(IEnumerable<StoredProductDto> products, int totalProductsCount)> FuzzyFindByNameAsync(
         string prodName,
         DataWindow dataWindow,
         SortOptions sortOptions,
