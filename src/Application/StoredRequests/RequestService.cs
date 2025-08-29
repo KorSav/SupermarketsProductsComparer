@@ -1,36 +1,65 @@
 using PriceComparer.Application.Common;
+using PriceComparer.Application.Products;
+using PriceComparer.Application.Products.DTOs;
+using PriceComparer.Application.Products.Types;
+using PriceComparer.Application.StoredRequests.DTOs;
 using PriceComparer.Domain;
 
 namespace PriceComparer.Application.StoredRequests;
 
-public class RequestService(IRequestRepository requestRepository)
+public class RequestService(IRequestRepository requestRepository, IProductService productService)
+    : IRequestService
 {
-    private readonly IRequestRepository _repo = requestRepository;
+    readonly IRequestRepository _repo = requestRepository;
+    readonly IProductService _prodServ = productService;
 
+    /// <summary>
+    /// If request is stored - delete, otherwise store
+    /// </summary>
     public async Task ToggleAsync(
         RequestDto request,
         User user,
         CancellationToken cancellationToken
     )
     {
-        StoredRequestDto? stored = await _repo.FindByQueryAndUserId(
-            request.Query,
-            user.Id,
-            cancellationToken
-        );
+        StoredRequestKey key = new(user.Id, request.ProdName);
+        StoredRequestDto? stored = await _repo.FindAsync(key, cancellationToken);
         if (stored is null)
-            await _repo.CreateOrUpdateAsync(new(user.Id, request), cancellationToken);
+            await _repo.CreateOrUpdateByKeyAsync(new(user.Id, request), cancellationToken);
         else
             await _repo.DeleteAsync(stored, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<RequestDto>> GetAllAsync(
+    public async Task<IReadOnlyDictionary<RequestDto, PaginatedList<ProductInfoDto>>> GetAllAsync(
         User user,
+        DataPage pagePerReq,
+        SortOptions sortOptionsPerReq,
         CancellationToken cancellationToken
-    ) => [.. (await _repo.GetAllByUserId(user.Id, cancellationToken)).Cast<RequestDto>()];
+    )
+    {
+        var requests = await _repo.GetAllAsync(user.Id, cancellationToken);
+        Dictionary<RequestDto, PaginatedList<ProductInfoDto>> result = new(requests.Count);
+        foreach (var req in requests)
+        {
+            var prods = await _prodServ.FindProductsByNameAsync(
+                req.ProdName,
+                pagePerReq,
+                sortOptionsPerReq,
+                cancellationToken
+            );
+            result.Add(req, prods);
+        }
+        return result;
+    }
 
-    public Task UpdateStoredAsync(
+    public async Task UpdateStoredAsync(
         StoredRequestDto requestDto,
         CancellationToken cancellationToken
-    ) => _repo.UpdateAsync(requestDto, cancellationToken);
+    )
+    {
+        if (!await _repo.TryUpdateByKeyAsync(requestDto, cancellationToken))
+            throw new InvalidOperationException(
+                "Request should be previously stored to be updated"
+            );
+    }
 }

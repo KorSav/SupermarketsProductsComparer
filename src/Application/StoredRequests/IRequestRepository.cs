@@ -1,23 +1,20 @@
+using PriceComparer.Application.StoredRequests.DTOs;
 using PriceComparer.Domain;
 
 namespace PriceComparer.Application.StoredRequests;
 
 public interface IRequestRepository
 {
-    Task<StoredRequestDto> CreateOrUpdateAsync(
+    Task<StoredRequestDto> CreateOrUpdateByKeyAsync(
         StoredRequestDto request,
         CancellationToken cancellationToken
     );
     Task DeleteAsync(StoredRequestDto request, CancellationToken cancellationToken);
-    Task<StoredRequestDto?> FindByQueryAndUserId(
-        string query,
-        UserId userId,
-        CancellationToken cancellationToken
-    );
-    Task<IList<StoredRequestDto>> GetAllByUserId(UserId id, CancellationToken cancellationToken);
+    Task<StoredRequestDto?> FindAsync(StoredRequestKey key, CancellationToken cancellationToken);
+    Task<IList<StoredRequestDto>> GetAllAsync(UserId id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Updates request if it is stored, otherwise throws exception
+    /// Updates request if it is stored
     /// </summary>
-    Task UpdateAsync(StoredRequestDto request, CancellationToken cancellationToken);
+    Task<bool> TryUpdateByKeyAsync(StoredRequestDto request, CancellationToken cancellationToken);
 }
