@@ -59,7 +59,6 @@ public class ProductService(IProductRepository productRepo) : IProductService
                 var providedProdInfos = await provider.GetProductsAsync(cancellationToken);
                 var unifiedProducts = providedProdInfos
                     .Select(pinfo => new StoredProductDto(
-                        Guid.Empty,
                         pinfo,
                         pinfo.ProductPrice.ToUnified(),
                         ProductStatus.Updated
