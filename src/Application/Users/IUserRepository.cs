@@ -1,12 +1,13 @@
-using PriceComparer.Domain;
+using PriceComparer.Application.Users.DTOs;
 
 namespace PriceComparer.Application.Users;
 
 public interface IUserRepository
 {
     /// <summary>
-    /// Creates user if it does not exist, otherwise throws exception
+    /// Creates user if it's name is unique
     /// </summary>
-    Task<User> CreateAsync(UserDto user);
-    Task<User?> FindByIdPAsync(IdPInfo idPInfo);
+    /// <exception cref="UserException"/>
+    Task<UserId> CreateAsync(UserDto user, CancellationToken cancellationToken);
+    Task<UserId?> FindByIdPAsync(IdPInfo idPInfo, CancellationToken cancellationToken);
 }

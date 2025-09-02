@@ -3,7 +3,7 @@ using PriceComparer.Application.Products;
 using PriceComparer.Application.Products.DTOs;
 using PriceComparer.Application.Products.Types;
 using PriceComparer.Application.StoredRequests.DTOs;
-using PriceComparer.Domain;
+using PriceComparer.Application.Users.DTOs;
 
 namespace PriceComparer.Application.StoredRequests;
 
@@ -18,26 +18,26 @@ public class RequestService(IRequestRepository requestRepository, IProductServic
     /// </summary>
     public async Task ToggleAsync(
         RequestDto request,
-        User user,
+        UserId userId,
         CancellationToken cancellationToken
     )
     {
-        StoredRequestKey key = new(user.Id, request.ProdName);
+        StoredRequestKey key = new(userId, request.ProdName);
         StoredRequestDto? stored = await _repo.FindAsync(key, cancellationToken);
         if (stored is null)
-            await _repo.CreateOrUpdateByKeyAsync(new(user.Id, request), cancellationToken);
+            await _repo.CreateOrUpdateByKeyAsync(new(userId, request), cancellationToken);
         else
             await _repo.DeleteAsync(stored, cancellationToken);
     }
 
     public async Task<IReadOnlyDictionary<RequestDto, PaginatedList<ProductInfoDto>>> GetAllAsync(
-        User user,
+        UserId userId,
         DataPage pagePerReq,
         SortOptions sortOptionsPerReq,
         CancellationToken cancellationToken
     )
     {
-        var requests = await _repo.GetAllAsync(user.Id, cancellationToken);
+        var requests = await _repo.GetAllAsync(userId, cancellationToken);
         Dictionary<RequestDto, PaginatedList<ProductInfoDto>> result = new(requests.Count);
         foreach (var req in requests)
         {

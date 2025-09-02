@@ -1,4 +1,5 @@
 using PriceComparer.Application.StoredRequests.DTOs;
+using PriceComparer.Application.Users.DTOs;
 using PriceComparer.Domain;
 
 namespace PriceComparer.Application.StoredRequests;
