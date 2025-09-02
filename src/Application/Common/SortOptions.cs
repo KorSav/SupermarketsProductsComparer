@@ -1,4 +1,4 @@
-using PriceComparer.Domain.Enums;
+using PriceComparer.Application.Products.Types;
 
 namespace PriceComparer.Application.Common;
 
