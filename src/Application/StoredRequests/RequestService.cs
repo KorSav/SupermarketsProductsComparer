@@ -55,11 +55,5 @@ public class RequestService(IRequestRepository requestRepository, IProductServic
     public async Task UpdateStoredAsync(
         StoredRequestDto requestDto,
         CancellationToken cancellationToken
-    )
-    {
-        if (!await _repo.TryUpdateByKeyAsync(requestDto, cancellationToken))
-            throw new InvalidOperationException(
-                "Request should be previously stored to be updated"
-            );
-    }
+    ) => await _repo.UpdateByKeyAsync(requestDto, cancellationToken);
 }

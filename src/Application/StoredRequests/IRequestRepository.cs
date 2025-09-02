@@ -1,6 +1,5 @@
 using PriceComparer.Application.StoredRequests.DTOs;
 using PriceComparer.Application.Users.DTOs;
-using PriceComparer.Domain;
 
 namespace PriceComparer.Application.StoredRequests;
 
@@ -10,6 +9,11 @@ public interface IRequestRepository
         StoredRequestDto request,
         CancellationToken cancellationToken
     );
+
+    /// <summary>
+    /// Deletes request if it is stored, otherwise throws exception
+    /// </summary>
+    /// <exception cref="StoredRequestException"/>
     Task DeleteAsync(StoredRequestDto request, CancellationToken cancellationToken);
     Task<StoredRequestDto?> FindAsync(StoredRequestKey key, CancellationToken cancellationToken);
     Task<IList<StoredRequestDto>> GetAllAsync(UserId id, CancellationToken cancellationToken);
@@ -17,5 +21,6 @@ public interface IRequestRepository
     /// <summary>
     /// Updates request if it is stored
     /// </summary>
-    Task<bool> TryUpdateByKeyAsync(StoredRequestDto request, CancellationToken cancellationToken);
+    /// <exception cref="StoredRequestException">
+    Task UpdateByKeyAsync(StoredRequestDto requestDto, CancellationToken cancellationToken);
 }
