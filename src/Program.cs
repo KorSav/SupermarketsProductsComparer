@@ -22,17 +22,25 @@ builder.Services.AddSingleton<IShopDataRetriever, FozzyDataRetirever>();
 builder.Services.AddSingleton<IShopDataRetriever, ForaDataRetriever>();
 builder.Services.AddSingleton<ShopProductsGeneralizer>();
 builder.Services.AddSingleton<PasswordHasher<string>>();
+
+#if !AVOID_PARSING // TODO: store last parse time in db
+Console.WriteLine("Started with data parsing");
 builder.Services.AddHostedService<ShopsDataParsingService>();
+#endif
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IRequestRepository, RequestRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<RequestService>();
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options => {
+builder
+    .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
         options.Cookie.HttpOnly = true;
         options.ExpireTimeSpan = TimeSpan.FromHours(4);
         options.LoginPath = "/";
@@ -48,8 +56,6 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}");
+app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}");
 
 app.Run();
