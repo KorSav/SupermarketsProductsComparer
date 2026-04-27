@@ -5,6 +5,12 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/src/">
-    <Project Path="src/program.csproj" />
+    <Project Path="src/ApplicationCore/ApplicationCore.csproj" />
+    <Project Path="src/Infrastructure/Infrastructure.csproj" />
+    <Project Path="src/WebApp/WebApp.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/ApplicationCoreTests/ApplicationCoreTests.csproj" />
+    <Project Path="test/InfrastructureIntegrationTests/InfrastructureIntegrationTests.csproj" />
   </Folder>
 </Solution>
