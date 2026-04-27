@@ -1,33 +1,25 @@
 using ApplicationCore;
 using ApplicationCore.Entities.Product;
-using Infrastructure;
 using Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Npgsql;
-using Serilog;
-using Testcontainers.PostgreSql;
 
 namespace InfrastructureIntegrationTests.RepositoryTests;
 
-public sealed class ProductRepositoryTests(DbContainerFixture _)
-    : DbTestBase(_),
+public sealed class BulkUpsertScopeTests(DbContainerFixture _)
+    : DbPerTestCaseBase(_),
         IClassFixture<DbContainerFixture>
 {
     [Fact]
-    public async Task UpsertAsync_InsertsDataAndHasNoLeftoverTable()
+    public async Task BulkUpsert_InsertsDataAndDropsTempTable()
     {
-        // Arrange
+        // Arrange + Act
         await using (var scope = Services.CreateAsyncScope())
         {
             var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
             var bulkScope = await repo.BeginBulkUpsertAsync(CancellationToken);
-
-            // Act
-            await bulkScope.UpsertAsync(New3Products(), CancellationToken);
+            await bulkScope.UpsertAsync(AllProducts(), CancellationToken);
             await bulkScope.CommitAsync(CancellationToken);
         }
 
@@ -35,135 +27,167 @@ public sealed class ProductRepositoryTests(DbContainerFixture _)
         await using (var scope = Services.CreateAsyncScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var expected = New3Products();
+            var expected = AllProducts();
             var actual = await dbContext
                 .Products.Select(p => p.ToCoreProduct())
                 .ToListAsync(CancellationToken);
-            Assert.Equivalent(expected, actual);
+            Assert.Equal(expected, actual);
+
+            var tempTableExists = await dbContext
+                .Database.SqlQueryRaw<bool>(
+                    $"SELECT EXISTS(SELECT 1 FROM pg_tables WHERE tablename=\'{BulkUpsertScope.TempTableName}\') AS \"Value\""
+                )
+                .SingleAsync(CancellationToken);
+            Assert.False(tempTableExists);
         }
     }
 
-    private List<Product> New3Products() =>
+    [Fact]
+    public async Task BulkUpsert_OverwritesExistingData()
+    {
+        // Arrange
+        await using (var scope = Services.CreateAsyncScope())
+        {
+            var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+            var bulkScope = await repo.BeginBulkUpsertAsync(CancellationToken);
+            await bulkScope.UpsertAsync(AllProducts(), CancellationToken);
+            await bulkScope.CommitAsync(CancellationToken);
+        }
+
+        // Act
+        await using (var scope = Services.CreateAsyncScope())
+        {
+            var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+            var bulkScope = await repo.BeginBulkUpsertAsync(CancellationToken);
+            await bulkScope.UpsertAsync(AllProductsModified(), CancellationToken);
+            await bulkScope.CommitAsync(CancellationToken);
+        }
+
+        // Assert
+        await using (var scope = Services.CreateAsyncScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var expected = AllProductsModified();
+            var actual = await dbContext
+                .Products.Select(p => p.ToCoreProduct())
+                .ToListAsync(CancellationToken);
+            Assert.Equal(expected, actual);
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpsert_Succeeds_IfSimilarProductsAppearMultipleTimes()
+    {
+        // Act
+        await using (var scope = Services.CreateAsyncScope())
+        {
+            var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+            var bulkScope = await repo.BeginBulkUpsertAsync(CancellationToken);
+            await bulkScope.UpsertAsync(AllProducts(), CancellationToken);
+            await bulkScope.UpsertAsync(AllProductsModified(), CancellationToken);
+            await bulkScope.CommitAsync(CancellationToken);
+        }
+
+        // Assert
+        await using (var scope = Services.CreateAsyncScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var ps1 = AllProducts();
+            var ps2 = AllProductsModified();
+            var act = await dbContext
+                .Products.Select(p => p.ToCoreProduct())
+                .ToListAsync(CancellationToken);
+            Assert.Equal(ps1.Count, act.Count); // randomly deduplicates
+            foreach (var ((p1, p2), actP) in ps1.Zip(ps2).Zip(act).ToList())
+                Assert.Contains([p1, p2], p => p == actP);
+        }
+    }
+
+    [Fact]
+    public async Task Rollback_CancelsUpsertsAndRemovesTempTable()
+    {
+        // Arrange + Act
+        await using (var scope = Services.CreateAsyncScope())
+        {
+            var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+            static void codeThrowingException() => throw new Exception();
+            var bulkScope = await repo.BeginBulkUpsertAsync(CancellationToken);
+            try
+            {
+                await bulkScope.UpsertAsync(AllProducts(), CancellationToken);
+                await bulkScope.UpsertAsync(
+                    [FozzyApple with { Name = "Apple t2" }],
+                    CancellationToken
+                );
+                codeThrowingException();
+                await bulkScope.CommitAsync(CancellationToken);
+            }
+            catch
+            {
+                await bulkScope.RollbackAsync();
+            }
+        }
+
+        // Assert
+        await using (var scope = Services.CreateAsyncScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var actual = await dbContext.Products.CountAsync(CancellationToken);
+            Assert.Equal(0, actual);
+
+            var tempTableExists = await dbContext
+                .Database.SqlQueryRaw<bool>(
+                    $"SELECT EXISTS(SELECT 1 FROM pg_tables WHERE tablename=\'{BulkUpsertScope.TempTableName}\') AS \"Value\""
+                )
+                .SingleAsync(CancellationToken);
+            Assert.False(tempTableExists);
+        }
+    }
+
+    private static List<Product> AllProductsModified() =>
         [
-            new Product(
-                Name: "Молоко",
-                Measure: new(1, MeasureUnit.Litre),
-                Price: 30,
-                LinkImage: new Uri("https://non-existing-images-silpo.com"),
-                LinkProduct: new Uri("https://non-existing-products-silpo.com"),
-                Shop: Shop.Silpo
-            ),
-            new Product(
-                Name: "Apple",
-                Measure: new(500, MeasureUnit.Gram),
-                Price: 15,
-                LinkImage: new Uri("https://image-stock.com"),
-                LinkProduct: new Uri("https://non-existing-products-fozzy.com"),
-                Shop: Shop.Fozzy
-            ),
-            new Product(
-                Name: "Напій juice",
-                Measure: new(200, MeasureUnit.MiliLitre),
-                Price: 20,
-                LinkImage: new Uri("https://image-stock.com"),
-                LinkProduct: new Uri("https://non-existing-products-fora.com"),
-                Shop: Shop.Fora
-            ),
+            SilpoMilk with
+            {
+                Price = 100m,
+            },
+            FozzyApple with
+            {
+                LinkProduct = new Uri("https://changed-product"),
+                LinkImage = new Uri("https://changed-image"),
+            },
+            ForaDrink with
+            {
+                Measure = new(300, MeasureUnit.Gram),
+            },
         ];
-}
 
-public sealed class DbContainerFixture : IAsyncLifetime
-{
-    private PostgreSqlContainer _db = null!;
+    private List<Product> AllProducts() => [SilpoMilk, FozzyApple, ForaDrink];
 
-    public string AdminConnectionString = null!;
-
-    public async ValueTask InitializeAsync()
-    {
-        var logsPath = Path.Combine(
-            "E:",
-            "sava",
-            "education",
-            "diploma",
-            "project",
-            "test",
-            "InfrastructureIntegrationTests",
-            "output.log"
+    private static Product SilpoMilk =>
+        new(
+            Name: "Молоко, 1л",
+            Measure: new(1, MeasureUnit.Litre),
+            Price: 30,
+            LinkImage: new Uri("https://non-existing-images-silpo.com"),
+            LinkProduct: new Uri("https://non-existing-products-silpo.com"),
+            Shop: Shop.Silpo
         );
-
-        var serilogLogger = new LoggerConfiguration()
-            .MinimumLevel.Warning()
-            .WriteTo.File(logsPath, rollingInterval: RollingInterval.Day)
-            .CreateLogger();
-        serilogLogger.Information("Starting db");
-
-        _db = new PostgreSqlBuilder("postgres:16-alpine")
-            .WithLogger(
-                LoggerFactory
-                    .Create(builder =>
-                    {
-                        builder.AddSerilog(serilogLogger).SetMinimumLevel(LogLevel.Trace);
-                    })
-                    .CreateLogger<PostgreSqlBuilder>()
-            )
-            .Build();
-        await _db.StartAsync();
-        AdminConnectionString = _db.GetConnectionString();
-        serilogLogger.Information("Db is running, configuring app");
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _db.DisposeAsync();
-    }
-}
-
-public abstract class DbTestBase(DbContainerFixture fixture)
-    : IAsyncLifetime,
-        IClassFixture<DbContainerFixture>
-{
-    private IHost _host = null!;
-    private string _dbName = null!;
-
-    public static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
-    public IServiceProvider Services { get; private set; } = null!;
-
-    public async ValueTask InitializeAsync()
-    {
-        _dbName = $"db_{GetType().Name}_{Guid.NewGuid():N}";
-        await using (var adminConnection = new NpgsqlConnection(fixture.AdminConnectionString))
-        {
-            await adminConnection.OpenAsync();
-            using var cmd = new NpgsqlCommand($"CREATE DATABASE {_dbName}", adminConnection);
-            await cmd.ExecuteNonQueryAsync();
-        }
-        var connString = new NpgsqlConnectionStringBuilder(fixture.AdminConnectionString)
-        {
-            Database = _dbName,
-        }.ConnectionString;
-
-        var builder = Host.CreateEmptyApplicationBuilder(null);
-        builder
-            .Configuration.AddJsonFile("./RepositoryTests/appsettings.json")
-            .AddInMemoryCollection([new("ConnectionStrings:DefaultConnection", connString)]);
-        builder.AddInfrastructure();
-
-        _host = builder.Build();
-        await using (var scope = _host.Services.CreateAsyncScope())
-        {
-            var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await dbCtx.Database.EnsureCreatedAsync();
-        }
-        Services = _host.Services;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        _host.Dispose();
-        await using var adminConnection = new NpgsqlConnection(fixture.AdminConnectionString);
-        await adminConnection.OpenAsync();
-        using var cmd = new NpgsqlCommand($"DROP DATABASE {_dbName} WITH (Force)", adminConnection);
-        await cmd.ExecuteNonQueryAsync();
-        GC.SuppressFinalize(this);
-    }
+    private static Product FozzyApple =>
+        new(
+            Name: "Apple 🍎, 500г",
+            Measure: new(500, MeasureUnit.Gram),
+            Price: 15,
+            LinkImage: new Uri("https://image-stock.com"),
+            LinkProduct: new Uri("https://non-existing-products-fozzy.com"),
+            Shop: Shop.Fozzy
+        );
+    private static Product ForaDrink =>
+        new(
+            Name: "Напій juice, 200мл",
+            Measure: new(200, MeasureUnit.MiliLitre),
+            Price: 20,
+            LinkImage: new Uri("https://image-stock.com"),
+            LinkProduct: new Uri("https://non-existing-products-fora.com"),
+            Shop: Shop.Fora
+        );
 }

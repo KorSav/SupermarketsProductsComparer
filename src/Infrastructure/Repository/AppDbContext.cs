@@ -6,7 +6,6 @@ namespace Infrastructure.Repository;
 internal class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<Product> Products { get; set; }
-    public DbSet<ScrapedProductStage> ScrapedProductStage { get; set; }
     public DbSet<Request> Requests { get; set; }
     public DbSet<User> Users { get; set; }
 
@@ -21,11 +20,6 @@ internal class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(
         {
             eb.Property(e => e.SortById).HasConversion<string>();
             eb.Property(e => e.SortOrderId).HasConversion<string>();
-        });
-        modelBuilder.Entity<ScrapedProductStage>(eb =>
-        {
-            eb.Property(e => e.Shop).HasConversion<string>();
-            eb.Property(e => e.Unit).HasConversion<string>();
         });
     }
 }

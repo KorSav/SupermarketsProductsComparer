@@ -60,21 +60,36 @@ internal class BulkUpsertScope : IBulkUpsertScope
     public async Task CommitAsync(CancellationToken ct)
     {
         ThrowIfTerminated();
-        await _dbContext.Database.ExecuteSqlRawAsync(
-            $"""
-            INSERT INTO "Products"("Shop", "Name", "Price", "UnifiedPrice", "Amount", "Unit", "FullLinkProduct", "FullLinkImage")
-            SELECT * FROM {TempTableName}
-            """,
-            ct
-        );
-        await _dbContext.Database.CloseConnectionAsync();
-        _terminated = true;
+        await using var tx = await _dbContext.Database.BeginTransactionAsync(ct);
+        try
+        {
+            await _dbContext.Database.ExecuteSqlRawAsync(
+                $"""
+                TRUNCATE TABLE "Products" RESTART IDENTITY;
+                INSERT INTO "Products"("Shop", "Name", "Price", "UnifiedPrice", "Amount", "Unit", "FullLinkProduct", "FullLinkImage")
+                    SELECT * FROM bulk_insert_table
+                ON CONFLICT ("Name", "Shop") DO NOTHING
+                """, // FIXME: random deduplication
+                ct
+            );
+            await tx.CommitAsync(ct);
+        }
+        catch
+        {
+            await tx.RollbackAsync(CancellationToken.None);
+            throw;
+        }
+        finally
+        {
+            await _dbContext.Database.CloseConnectionAsync();
+            _terminated = true;
+        }
     }
 
     public async Task RollbackAsync()
     {
         ThrowIfTerminated();
-        // db will drop temp table when connection is in any case closed
+        // db will drop temp table when connection is closed
         await _dbContext.Database.CloseConnectionAsync();
         _terminated = true;
     }

@@ -6,6 +6,7 @@ using CoreProduct = ApplicationCore.Entities.Product.Product;
 
 namespace Infrastructure.Repository.Entities;
 
+[Index(nameof(Name), nameof(Shop), IsUnique = true)]
 internal class Product
 {
     [Key]
