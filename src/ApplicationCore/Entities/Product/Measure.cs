@@ -4,7 +4,7 @@ using ApplicationCore.Utils;
 using Dim = MeasureDim;
 using Unit = MeasureUnit;
 
-public readonly struct Measure
+public readonly record struct Measure
 {
     public readonly Unit Unit { get; }
     public readonly Dim Dimension { get; }
@@ -19,18 +19,18 @@ public readonly struct Measure
         Unit = unit;
         Count = count;
         (Dimension, _scale) = unit switch
-        { // to simlify storing, base unit is always biggest possible (not to store many digits after dot on conversion)
+        {
             Unit.KiloGram => (Dim.Mass, 1),
-            Unit.MiliGram => (Dim.Mass, 1e-6m),
-            Unit.Gram => (Dim.Mass, 1e-3m),
+            Unit.MiliGram => (Dim.Mass, 1e6m),
+            Unit.Gram => (Dim.Mass, 1e3m),
 
             Unit.Litre => (Dim.Volume, 1),
-            Unit.MiliLitre => (Dim.Volume, 1e-3m),
+            Unit.MiliLitre => (Dim.Volume, 1e3m),
 
             Unit.Meter => (Dim.Length, 1),
-            Unit.MiliMeter => (Dim.Length, 1e-3m),
-            Unit.SantiMeter => (Dim.Length, 1e-2m),
-            Unit.DeciMeter => (Dim.Length, 1e-1m),
+            Unit.MiliMeter => (Dim.Length, 1e3m),
+            Unit.SantiMeter => (Dim.Length, 1e2m),
+            Unit.DeciMeter => (Dim.Length, 10),
 
             Unit.Count => (Dim.Count, 1),
             _ => throw new NotImplementedException(

@@ -8,7 +8,7 @@ namespace Infrastructure.Repository;
 
 internal class BulkUpsertScope : IBulkUpsertScope
 {
-    internal const string TempTableName = "bulk_insert_table";
+    internal const string TempTableName = "bulk_insert_table"; // just to test it is dropped
     private bool _terminated = false;
     private readonly AppDbContext _dbContext;
 

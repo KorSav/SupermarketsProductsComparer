@@ -15,6 +15,14 @@ public record Product(
         return this with { Price = Price * scale, Measure = measure };
     }
 
+    /// <summary>
+    /// Returns product with update price and measure up to predefined unit of dimension.
+    /// </summary>
+    /// <remarks>
+    /// To reduce pricision loss, base unit is 1 of biggest unit in given dimension.
+    /// This makes sure smaller units after conversion won't have significant value in fractional part.
+    /// Precision is lost only if converting N of base unit to 1 base unit and it is accepted since this is rare
+    /// </remarks>
     public Product WithUnifiedPrice()
     {
         var unifiedMeasure = Measure.Dimension switch

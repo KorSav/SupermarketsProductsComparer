@@ -28,7 +28,7 @@ public sealed class DbContainerFixture : IAsyncLifetime
 
         Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
-            .WriteTo.File(logsPath, rollingInterval: RollingInterval.Day)
+            .WriteTo.File(logsPath, rollingInterval: RollingInterval.Day, shared: true)
             .CreateLogger();
         Logger.Information(new string('=', 50));
         Logger.Information("Starting new container");
@@ -55,5 +55,6 @@ public sealed class DbContainerFixture : IAsyncLifetime
     {
         await _db.DisposeAsync();
         Logger.Information("Container disposed");
+        await Logger.DisposeAsync();
     }
 }

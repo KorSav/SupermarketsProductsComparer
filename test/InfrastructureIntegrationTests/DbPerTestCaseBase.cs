@@ -4,24 +4,23 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
+using Serilog;
 
 namespace InfrastructureIntegrationTests;
 
-public abstract class DbPerTestCaseBase(DbContainerFixture fixture)
-    : IAsyncLifetime,
-        IClassFixture<DbContainerFixture>
+public abstract class DbPerTestCaseBase(DbContainerFixture fixture) : IAsyncLifetime
 {
     private IHost _host = null!;
     private string _dbName = null!;
 
+    public static string TCName => TestContext.Current.TestCase!.TestCaseDisplayName;
     public static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
     public IServiceProvider Services { get; private set; } = null!;
 
     public async ValueTask InitializeAsync()
     {
         _dbName = $"db_{GetType().Name}_{Guid.NewGuid():N}";
-        var testCase = TestContext.Current.TestCase!.TestCaseDisplayName;
-        fixture.Logger.Information("Creating database {DB} for TC {TC}", _dbName, testCase);
+        fixture.Logger.Information("Creating database {DB} for TC {TC}", _dbName, TCName);
         await using (var adminConnection = new NpgsqlConnection(fixture.AdminConnectionString))
         {
             await adminConnection.OpenAsync();
@@ -42,6 +41,7 @@ public abstract class DbPerTestCaseBase(DbContainerFixture fixture)
         builder
             .Configuration.AddJsonFile("./RepositoryTests/appsettings.json")
             .AddInMemoryCollection([new("ConnectionStrings:DefaultConnection", connString)]);
+        builder.Services.AddLogging(builder => builder.AddSerilog(fixture.Logger));
         builder.AddInfrastructure();
 
         _host = builder.Build();

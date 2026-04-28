@@ -4,12 +4,12 @@ using Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using static InfrastructureIntegrationTests.Products;
 
 namespace InfrastructureIntegrationTests.RepositoryTests;
 
-public sealed class BulkUpsertScopeTests(DbContainerFixture _)
-    : DbPerTestCaseBase(_),
-        IClassFixture<DbContainerFixture>
+[Collection(Collections.Container1)]
+public sealed class BulkUpsertScopeTests(DbContainerFixture _) : DbPerTestCaseBase(_)
 {
     [Fact]
     public async Task BulkUpsert_InsertsDataAndDropsTempTable()
@@ -155,39 +155,11 @@ public sealed class BulkUpsertScopeTests(DbContainerFixture _)
                 LinkProduct = new Uri("https://changed-product"),
                 LinkImage = new Uri("https://changed-image"),
             },
-            ForaDrink with
+            SilpoDrink with
             {
                 Measure = new(300, MeasureUnit.Gram),
             },
         ];
 
-    private List<Product> AllProducts() => [SilpoMilk, FozzyApple, ForaDrink];
-
-    private static Product SilpoMilk =>
-        new(
-            Name: "Молоко, 1л",
-            Measure: new(1, MeasureUnit.Litre),
-            Price: 30,
-            LinkImage: new Uri("https://non-existing-images-silpo.com"),
-            LinkProduct: new Uri("https://non-existing-products-silpo.com"),
-            Shop: Shop.Silpo
-        );
-    private static Product FozzyApple =>
-        new(
-            Name: "Apple 🍎, 500г",
-            Measure: new(500, MeasureUnit.Gram),
-            Price: 15,
-            LinkImage: new Uri("https://image-stock.com"),
-            LinkProduct: new Uri("https://non-existing-products-fozzy.com"),
-            Shop: Shop.Fozzy
-        );
-    private static Product ForaDrink =>
-        new(
-            Name: "Напій juice, 200мл",
-            Measure: new(200, MeasureUnit.MiliLitre),
-            Price: 20,
-            LinkImage: new Uri("https://image-stock.com"),
-            LinkProduct: new Uri("https://non-existing-products-fora.com"),
-            Shop: Shop.Fora
-        );
+    private List<Product> AllProducts() => [SilpoMilk, FozzyApple, SilpoDrink];
 }

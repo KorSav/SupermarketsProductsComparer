@@ -10,6 +10,9 @@ public record Request
     public bool ApplySearchString => SearchString is not "";
     public bool CanBeStored => SearchString is not "";
 
+    /// <summary>
+    /// User's request to find products. If <see cref="searchString"/> is empty/whitespaces then it is ignored and all data considered
+    /// </summary>
     public Request(string searchString, SortBy sortBy, SortOrder sortOrder)
     {
         ArgumentNullException.ThrowIfNull(searchString);

@@ -3,7 +3,6 @@ using ApplicationCore;
 using ApplicationCore.DTOs;
 using ApplicationCore.Entities.Request;
 using Microsoft.EntityFrameworkCore;
-using OpenQA.Selenium.DevTools.V129.Storage;
 using CoreProduct = ApplicationCore.Entities.Product.Product;
 
 namespace Infrastructure.Repository;
@@ -11,7 +10,7 @@ namespace Infrastructure.Repository;
 internal class ProductRepository(AppDbContext dbContext) : IProductRepository
 {
     /// <summary>
-    /// Other repo methods could be used, but they won't see non commit changes
+    /// Other repo methods could be used, but they won't see non committed changes
     /// </summary>
     /// <param name="ct"></param>
     /// <returns></returns>
@@ -25,9 +24,14 @@ internal class ProductRepository(AppDbContext dbContext) : IProductRepository
     {
         var queriable = dbContext.Products.AsQueryable();
         if (query.Request.ApplySearchString)
-            queriable = queriable.Where(e =>
-                EF.Functions.ILike(e.Name, query.Request.SearchString) // TODO: improve searching
+        {
+            var words = query.Request.SearchString.Split(
+                ' ',
+                StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries
             );
+            foreach (var w in words) // TODO: improve searching
+                queriable = queriable.Where(e => EF.Functions.ILike(e.Name, w.ToPattern(), @"\"));
+        }
 
         queriable = query.Request.SortBy switch
         {
@@ -61,4 +65,12 @@ file static class Extensions
             SortOrder.Desc => queryable.OrderByDescending(expr),
             _ => throw new NotImplementedException($"Ordering is not defined for: '{sortOrder}'"),
         };
+
+    public static string ToPattern(this string str)
+    {
+        string[] spec = [@"\", @"%", @"_", @"[", @"]", @"^"];
+        foreach (var ch in spec)
+            str = str.Replace(ch, @"\" + ch);
+        return $"%{str}%";
+    }
 }
