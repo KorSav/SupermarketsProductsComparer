@@ -1,20 +1,18 @@
 using ApplicationCore.Entities.Product;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ApplicationCore.Services;
 
 public class RepositoryFreshUpService(
     IServiceProvider serviceProvider,
-    IConfiguration config,
+    IOptionsMonitor<RepositoryFreshUpServiceOptions> optionsMonitor,
     ILogger<RepositoryFreshUpService> logger
 ) : BackgroundService
 {
-    private readonly TimeSpan _interval = TimeSpan.FromHours( // minimum 1 hour
-        double.Parse(config.GetRequiredSection("Delays:DbFreshUpHrs").Value ?? "")
-    );
+    private RepositoryFreshUpServiceOptions Options => optionsMonitor.CurrentValue;
 
     /// <summary>
     /// Logic of updating data in database regularly
@@ -25,7 +23,7 @@ public class RepositoryFreshUpService(
         {
             var parsingStartTime = DateTime.UtcNow; // TODO: store last parse time in db
 
-            using (var scope = serviceProvider.CreateScope())
+            await using (var scope = serviceProvider.CreateAsyncScope())
             {
                 var productRepo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
                 var provider = scope.ServiceProvider.GetRequiredService<IShopProductProvider>();
@@ -33,7 +31,7 @@ public class RepositoryFreshUpService(
             }
 
             var parsingDuration = DateTime.UtcNow - parsingStartTime;
-            var remainingTime = _interval - parsingDuration;
+            var remainingTime = Options.Interval - parsingDuration;
             if (remainingTime > TimeSpan.Zero)
             {
                 logger.LogInformation(

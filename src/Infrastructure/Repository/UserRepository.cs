@@ -2,9 +2,11 @@ using ApplicationCore;
 using ApplicationCore.Entities;
 using ApplicationCore.Exceptions;
 using Infrastructure.Repository.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using static ApplicationCore.Exceptions.ConflictExceptionType;
+using static ApplicationCore.Exceptions.NotFoundExceptionType;
 using Codes = Npgsql.PostgresErrorCodes;
 
 namespace Infrastructure.Repository;
@@ -14,24 +16,35 @@ internal class UserRepository(AppDbContext dbContext) : IUserRepository
     public async Task<User?> FindByNameAndSurnameAsync(string name, string surname)
     {
         var existing = await dbContext.Users.FirstOrDefaultAsync(e =>
-            e.Name == name || e.Surname == surname
+            e.Name == name && e.Surname == surname
         );
         return existing?.ToUser();
     }
 
-    public Task<bool> IsPasswordValidAsync(Guid id, string password)
+    public async Task<bool> IsPasswordValidAsync(Guid userId, string password)
     {
-        throw new NotImplementedException();
+        var efUser =
+            await dbContext.Users.Where(e => e.Id == userId).FirstOrDefaultAsync()
+            ?? throw DomainException.For(UserDoesNotExist);
+        var hasher = new PasswordHasher<User>();
+        return hasher.VerifyHashedPassword(efUser.ToUser(), efUser.PasswordHash, password) switch
+        {
+            PasswordVerificationResult.Success => true,
+            PasswordVerificationResult.SuccessRehashNeeded => true, // won't never match
+            _ => false,
+        };
     }
 
     public async Task<User> RegisterNewAsync(string name, string surname, string password)
     {
         try
         {
-            EfUser toRegister = new(name, surname, password);
-            dbContext.Add(toRegister);
+            var hasher = new PasswordHasher<string>();
+            var passwordHash = hasher.HashPassword(user: "", password);
+            EfUser registered = new(name, surname, passwordHash);
+            dbContext.Add(registered);
             await dbContext.SaveChangesAsync();
-            return toRegister.ToUser();
+            return registered.ToUser();
         }
         catch (DbUpdateException ex) when (ex.InnerException is NpgsqlException pex)
         {
@@ -40,24 +53,4 @@ internal class UserRepository(AppDbContext dbContext) : IUserRepository
             throw;
         }
     }
-
-    // public async Task<User> SaveAsync(User user)
-    // {
-    //     User? existingUser = await _dbContext.Users.FirstOrDefaultAsync(u =>
-    //         u.Name == user.Name || u.Email == user.Email
-    //     );
-    //     if (existingUser is null)
-    //     {
-    //         _dbContext.Users.Add(user);
-    //     }
-    //     else
-    //     {
-    //         existingUser.Name = user.Name;
-    //         existingUser.Email = user.Email;
-    //         existingUser.PasswordHash = user.PasswordHash;
-    //     }
-    //     await _dbContext.SaveChangesAsync();
-    //     _dbContext.Entry(user).State = EntityState.Detached;
-    //     return user;
-    // }
 }

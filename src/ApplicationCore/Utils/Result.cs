@@ -2,43 +2,56 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ApplicationCore.Utils;
 
+/// <summary>
+/// Value type comparison is not deep, so ErrorList will be compared by reference only
+/// </summary>
 public record Result<T>
     where T : notnull
 {
-    public List<Error> ErrorList { get; private set; } = [];
-    private readonly T? _value;
+    public List<Error> ErrorList { get; private set; }
 
-    private Result(T? value)
+    public T? Value { get; private init; }
+
+    [MemberNotNullWhen(true, nameof(Value))]
+    public bool IsSuccess => Value is not null;
+
+    internal Result(T value)
     {
-        _value = value;
+        Value = value;
+        ErrorList = [];
     }
 
-    private Result()
+    internal Result(List<Error> errorList)
     {
-        _value = default;
+        Value = default;
+        ErrorList = errorList;
     }
 
-    public static Result<T> Success(T value)
+    public static implicit operator Result<T>(T value) => new(value);
+};
+
+public static class Result
+{
+    public static Result<T> Success<T>(T value)
+        where T : notnull
     {
         ArgumentNullException.ThrowIfNull(value);
-        return new Result<T>(value);
+        return new(value);
     }
 
-    public static implicit operator Result<T>(T value) => Result<T>.Success(value);
-
-    public static Result<T> Failure(params IReadOnlyCollection<Error> errors)
+    public static Result<T> Failure<T>(params IReadOnlyCollection<Error> errors)
+        where T : notnull
     {
         if (errors is null || errors.Count == 0)
             throw new ArgumentException("Errors can't be null or empty", nameof(errors));
-        return new Result<T>() { ErrorList = [.. errors] };
+        return new([.. errors]);
     }
 
-    public bool TryGetValue([NotNullWhen(true)] out T? value)
+    public static Result<T> Failure<T>(params IReadOnlyCollection<TypedError<T>> errors)
+        where T : notnull
     {
-        value = default;
-        if (_value is null)
-            return false;
-        value = _value;
-        return true;
+        if (errors is null || errors.Count == 0)
+            throw new ArgumentException("Errors can't be null or empty", nameof(errors));
+        return new([.. errors]);
     }
-};
+}

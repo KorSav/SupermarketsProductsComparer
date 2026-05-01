@@ -1,3 +1,4 @@
+using ApplicationCore;
 using Infrastructure;
 using Infrastructure.Repository;
 using Microsoft.Extensions.Configuration;
@@ -42,6 +43,7 @@ public abstract class DbPerTestCaseBase(DbContainerFixture fixture) : IAsyncLife
             .Configuration.AddJsonFile("./RepositoryTests/appsettings.json")
             .AddInMemoryCollection([new("ConnectionStrings:DefaultConnection", connString)]);
         builder.Services.AddLogging(builder => builder.AddSerilog(fixture.Logger));
+        builder.AddApplicationCore();
         builder.AddInfrastructure();
 
         _host = builder.Build();
@@ -51,7 +53,7 @@ public abstract class DbPerTestCaseBase(DbContainerFixture fixture) : IAsyncLife
             var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await dbCtx.Database.EnsureCreatedAsync();
         }
-        fixture.Logger.Information("{DB} created tables, executing TC", _dbName);
+        fixture.Logger.Information("{DB} start executing TC", _dbName);
         Services = _host.Services;
     }
 
