@@ -1,20 +1,16 @@
 namespace ApplicationCore.Entities.Request;
 
-public record StoredRequest : Request
+public record StoredRequest
 {
-    public Guid Id { get; init; }
-    public int UserId { get; init; }
+    public Guid Id { get; }
+    public Guid UserId { get; }
+    public Request Request { get; init; }
 
-    public StoredRequest(
-        Guid id,
-        int userId,
-        string searchString,
-        SortBy sortBy,
-        SortOrder sortOrder
-    )
-        : base(searchString, sortBy, sortOrder)
+    public StoredRequest(Guid id, Guid userId, Request request)
     {
+        ArgumentNullException.ThrowIfNull(request);
         Id = id;
         UserId = userId;
+        Request = request;
     }
 }

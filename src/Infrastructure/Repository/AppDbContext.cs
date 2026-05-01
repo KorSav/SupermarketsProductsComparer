@@ -5,21 +5,21 @@ namespace Infrastructure.Repository;
 
 internal class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public DbSet<Product> Products { get; set; }
-    public DbSet<Request> Requests { get; set; }
-    public DbSet<User> Users { get; set; }
+    public DbSet<EfProduct> Products { get; set; }
+    public DbSet<EfRequest> Requests { get; set; }
+    public DbSet<EfUser> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Product>(eb =>
+        modelBuilder.Entity<EfProduct>(eb =>
         {
             eb.Property(e => e.Shop).HasConversion<string>();
             eb.Property(e => e.Unit).HasConversion<string>();
         });
-        modelBuilder.Entity<Request>(eb =>
+        modelBuilder.Entity<EfRequest>(eb =>
         {
-            eb.Property(e => e.SortById).HasConversion<string>();
-            eb.Property(e => e.SortOrderId).HasConversion<string>();
+            eb.Property(e => e.SortBy).HasConversion<string>();
+            eb.Property(e => e.SortOrder).HasConversion<string>();
         });
     }
 }

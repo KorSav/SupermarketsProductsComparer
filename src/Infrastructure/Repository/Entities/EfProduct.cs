@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using ApplicationCore.Entities.Product;
 using Microsoft.EntityFrameworkCore;
 using CoreProduct = ApplicationCore.Entities.Product.Product;
@@ -7,7 +6,7 @@ using CoreProduct = ApplicationCore.Entities.Product.Product;
 namespace Infrastructure.Repository.Entities;
 
 [Index(nameof(Name), nameof(Shop), IsUnique = true)]
-internal class Product
+internal class EfProduct
 {
     [Key]
     public int Id { get; set; }

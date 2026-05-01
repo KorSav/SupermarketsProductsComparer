@@ -1,9 +1,10 @@
+using ApplicationCore.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repository.Entities;
 
 [Index(nameof(Name), nameof(Surname), IsUnique = true)]
-internal class User
+internal class EfUser
 {
     public Guid Id { get; set; }
 
@@ -12,4 +13,15 @@ internal class User
     public string Surname { get; set; } = null!;
 
     public string PasswordHash { get; set; } = null!;
+
+    public EfUser() { }
+
+    public EfUser(string name, string surname, string passwordHash)
+    {
+        Name = name;
+        Surname = surname;
+        PasswordHash = passwordHash;
+    }
+
+    public User ToUser() => new(Id, Name, Surname);
 }

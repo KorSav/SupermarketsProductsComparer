@@ -3,36 +3,23 @@ namespace ApplicationCore.Exceptions;
 using ApplicationCore.Services;
 using static ValidationExceptionType;
 
-public class ValidationException : DomainException
-{
-    public ValidationExceptionType Type { get; private set; }
-
-    public ValidationException(ValidationExceptionType type)
-        : base(MessageFor(type)) { }
-
-    public ValidationException(ValidationExceptionType type, Exception inner)
-        : base(MessageFor(type), inner) { }
-
-    public static string MessageFor(ValidationExceptionType type) =>
-        type switch
-        {
-            StoredRequestsLimitExceeded =>
-                $"User can't have more that {StoredRequestsService.MaxLimit} stored request",
-            _ => Enum.IsDefined(type)
-                ? $"Message is undefined for type: {type}"
-                : $"Undefined exception type: {type}",
-        };
-}
-
 public enum ValidationExceptionType
 {
-    StoredRequestsLimitExceeded = 1,
+    StoredRequestsLimitReached = 1,
+    TooManyRequest,
+    NotAllowed,
 }
 
-public static class ValidationExceptionTypeExtensions
+public static class ValidationExceptionTypeExtension
 {
-    public static ValidationException New(this ValidationExceptionType type) => new(type);
-
-    public static ValidationException New(this ValidationExceptionType type, Exception inner) =>
-        new(type, inner);
+    public static string ToMessage(this ValidationExceptionType type) =>
+        type switch
+        {
+            StoredRequestsLimitReached =>
+                $"User can't have more than {StoredRequestsService.MaxLimit} stored requests",
+            TooManyRequest =>
+                $"Two or more request arrived in parallel but this is forbidden for the action",
+            NotAllowed => $"The requested action is not allowed",
+            _ => DomainException<ValidationExceptionType>.CatchAllCase(type),
+        };
 }

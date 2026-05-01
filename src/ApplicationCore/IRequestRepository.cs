@@ -9,8 +9,12 @@ public interface IRequestRepository
         CancellationToken cancellationToken
     );
 
-    StoredRequest AddNew(Request request, Guid userId);
-    StoredRequest UpdateExisting(StoredRequest existing, Request newParams);
-    void RemoveById(Guid storedId, Guid userId);
-    Task SaveChangesAsync(CancellationToken cancellationToken);
+    Task<StoredRequest> AddNewAsync(
+        Request request,
+        Guid userId,
+        int maxCount,
+        CancellationToken cancellationToken
+    );
+    Task UpdateExistingAsync(StoredRequest existing, CancellationToken cancellationToken);
+    Task RemoveByIdAsync(Guid storedId, Guid userId, CancellationToken cancellationToken);
 }

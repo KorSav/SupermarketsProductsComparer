@@ -1,77 +1,117 @@
 using ApplicationCore;
+using ApplicationCore.Entities.Request;
+using ApplicationCore.Exceptions;
 using Infrastructure.Repository.Entities;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using static ApplicationCore.Exceptions.ConflictExceptionType;
+using static ApplicationCore.Exceptions.NotFoundExceptionType;
+using static ApplicationCore.Exceptions.ValidationExceptionType;
+using Codes = Npgsql.PostgresErrorCodes;
 
 namespace Infrastructure.Repository;
 
-internal class RequestRepository : IRequestRepository
+internal class RequestRepository(AppDbContext dbContext) : IRequestRepository
 {
-    private readonly AppDbContext _dbContext;
+    /// <summary>
+    /// Only for integration testing to be able to reproduce race condition. Ignored in app
+    /// </summary>
+    internal TimeSpan? DelayBeforeCheckingAmount { get; set; }
 
-    public RequestRepository(AppDbContext dbContext)
+    public async Task<StoredRequest> AddNewAsync(
+        Request request,
+        Guid userId,
+        int maxCount,
+        CancellationToken cancellationToken
+    )
     {
-        _dbContext = dbContext;
+        await using var tx = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await dbContext.Database.ExecuteSqlAsync(
+                $"""
+                SELECT 1 FROM "Users"
+                WHERE "Id" = {userId}
+                FOR UPDATE NOWAIT
+                """,
+                cancellationToken
+            );
+
+            var total = await dbContext
+                .Requests.Where(e => e.UserId == userId)
+                .CountAsync(cancellationToken);
+            if (DelayBeforeCheckingAmount is not null)
+                await Task.Delay(DelayBeforeCheckingAmount.Value, cancellationToken);
+            if (total >= maxCount)
+                throw DomainException.For(StoredRequestsLimitReached);
+
+            EfRequest toAdd = new(new StoredRequest(Guid.Empty, userId, request));
+            dbContext.Requests.Add(toAdd);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return toAdd.ToStoredRequest(); // ef populates object id after successful save changes
+        }
+        catch (PostgresException pex) when (pex.SqlState is Codes.LockNotAvailable)
+        {
+            throw DomainException.For(TooManyRequest, pex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pex)
+        {
+            if (pex.SqlState is Codes.UniqueViolation)
+                throw DomainException.For(StoredRequestNotUnique, ex);
+            throw;
+        }
     }
 
-    public ApplicationCore.Entities.Request.StoredRequest AddNew(ApplicationCore.Entities.Request.Request request, Guid userId)
+    public Task<List<StoredRequest>> FindAllByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken
+    ) =>
+        dbContext
+            .Requests.Where(e => e.UserId == userId)
+            .Select(e => e.ToStoredRequest())
+            .ToListAsync(cancellationToken);
+
+    public async Task RemoveByIdAsync(
+        Guid storedId,
+        Guid userId,
+        CancellationToken cancellationToken
+    )
     {
-        throw new NotImplementedException();
+        await dbContext
+            .Requests.Where(e => e.Id == storedId && e.UserId == userId) // user can delete only his data
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
-    // public async Task DeleteRequestAsync(Request request)
-    // {
-    //     await _dbContext
-    //         .Requests.Where(r => r.Name == request.SearchString && r.UserId == request.UserId)
-    //         .ExecuteDeleteAsync();
-    // }
-
-    public Task<List<ApplicationCore.Entities.Request.StoredRequest>> FindAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task UpdateExistingAsync(
+        StoredRequest changedExisting,
+        CancellationToken cancellationToken
+    )
     {
-        throw new NotImplementedException();
-    }
-
-    // public async Task<Request?> FindRequestAsync(Request request)
-    // {
-    //     return await _dbContext
-    //         .Requests.AsNoTracking()
-    //         .FirstOrDefaultAsync(r => r.Name == request.SearchString && r.UserId == request.UserId);
-    // }
-
-    public async Task<List<Request>> GetAllRequestsOfUserAsync(int userId)
-    {
-        return await _dbContext.Requests.Where(r => r.UserId == userId).ToListAsync();
-    }
-
-    public void RemoveById(Guid storedId, Guid userId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
-    }
-
-    // public async Task SaveRequestAsync(Request request)
-    // {
-    //     Request? foundRequest = _dbContext.Requests.FirstOrDefault(r =>
-    //         r.Name == request.SearchString && r.UserId == request.UserId
-    //     );
-    //     if (foundRequest is not null)
-    //     {
-    //         foundRequest.SortId = request.SortId;
-    //         foundRequest.SortOrderId = request.SortOrderId;
-    //     }
-    //     else
-    //     {
-    //         await _dbContext.Requests.AddAsync(request);
-    //     }
-    //     await _dbContext.SaveChangesAsync();
-    //     _dbContext.Requests.Entry(request).State = EntityState.Detached;
-    // }
-
-    public ApplicationCore.Entities.Request.StoredRequest UpdateExisting(ApplicationCore.Entities.Request.StoredRequest existing, ApplicationCore.Entities.Request.Request newParams)
-    {
-        throw new NotImplementedException();
+        int affected;
+        try
+        {
+            affected = await dbContext
+                .Requests.Where(e =>
+                    e.Id == changedExisting.Id && e.UserId == changedExisting.UserId
+                )
+                .ExecuteUpdateAsync(
+                    setters =>
+                        setters
+                            .SetProperty(e => e.SearchString, changedExisting.Request.SearchString)
+                            .SetProperty(e => e.SortBy, changedExisting.Request.SortBy)
+                            .SetProperty(e => e.SortOrder, changedExisting.Request.SortOrder),
+                    cancellationToken
+                );
+        }
+        catch (PostgresException pex)
+        {
+            if (pex.SqlState is Codes.UniqueViolation)
+                throw DomainException.For(StoredRequestNotUnique, pex);
+            throw;
+        }
+        if (affected is 0) // if for example delete happened concurrently
+            throw DomainException.For(StoredRequestDoesNotExist);
+        return;
     }
 }

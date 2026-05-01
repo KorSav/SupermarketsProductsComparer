@@ -22,11 +22,15 @@ public static class ApplicationBuilderExtension
     {
         // builder.Services.AddSingleton<PasswordHasher<string>>();
         builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+            options
+                .UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
         );
         builder
             .Services.AddScoped<IProductRepository, ProductRepository>()
-            .AddScoped<IBulkUpsertScope, BulkUpsertScope>();
+            .AddScoped<IBulkUpsertScope, BulkUpsertScope>()
+            .AddScoped<IRequestRepository, RequestRepository>()
+            .AddScoped<IUserRepository, UserRepository>();
         return builder;
     }
 

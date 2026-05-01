@@ -1,36 +1,44 @@
 using ApplicationCore;
 using ApplicationCore.Entities;
+using ApplicationCore.Exceptions;
+using Infrastructure.Repository.Entities;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using static ApplicationCore.Exceptions.ConflictExceptionType;
+using Codes = Npgsql.PostgresErrorCodes;
 
 namespace Infrastructure.Repository;
 
 internal class UserRepository(AppDbContext dbContext) : IUserRepository
 {
-    private readonly AppDbContext _dbContext = dbContext;
-
-    public Task<User?> FindByNameAndSurnameAsync(string name, string surname)
+    public async Task<User?> FindByNameAndSurnameAsync(string name, string surname)
     {
-        throw new NotImplementedException();
+        var existing = await dbContext.Users.FirstOrDefaultAsync(e =>
+            e.Name == name || e.Surname == surname
+        );
+        return existing?.ToUser();
     }
-
-    // public async Task<User?> GetUserByEmailAsync(string email)
-    // {
-    //     return await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
-    // }
-
-    // public async Task<User?> GetUserByNameAsync(string userName)
-    // {
-    //     return await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Name == userName);
-    // }
 
     public Task<bool> IsPasswordValidAsync(Guid id, string password)
     {
         throw new NotImplementedException();
     }
 
-    public Task<User> RegisterNewAsync(string name, string surname, string password)
+    public async Task<User> RegisterNewAsync(string name, string surname, string password)
     {
-        throw new NotImplementedException();
+        try
+        {
+            EfUser toRegister = new(name, surname, password);
+            dbContext.Add(toRegister);
+            await dbContext.SaveChangesAsync();
+            return toRegister.ToUser();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is NpgsqlException pex)
+        {
+            if (pex.SqlState is Codes.UniqueViolation)
+                throw DomainException.For(UserDuplicateRegister, ex);
+            throw;
+        }
     }
 
     // public async Task<User> SaveAsync(User user)
