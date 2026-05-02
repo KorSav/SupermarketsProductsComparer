@@ -1,29 +1,21 @@
-﻿@model PaginatedList<ProductViewModel>
+﻿@model HomeViewModel
+@using ApplicationCore.Entities.Request
 @using Microsoft.AspNetCore.Components;
 @using Microsoft.Extensions.Primitives
-@using program.Utils;
+@using System.Diagnostics
+@using WebApp.Controllers.Enums
+@using WebApp.Controllers.Mappings
 
 @{
     ViewData["Title"] = "Product List";
-
-    var sortBys = Context.Request.Query["sortBy"];
-    SortBy sortBy = SortBy.Name;
-    sortBy.SetFromFirstInIfExist(sortBys);
-
-    var sortOrders = Context.Request.Query["sortOrder"];
-    SortOrderId sortOrder = SortOrderId.Asc;
-    sortOrder.SetFromFirstInIfExist(sortOrders);
-    SortOrderId otherSortOrder = sortOrder switch
+    bool areProductsFound = Model.Products.Count > 0;
+    var sortOrder = Model.Request.SortOrder;
+    var (otherSortOrder, sortOrderClass) = Model.Request.SortOrder switch
     {
-        SortOrderId.Asc => SortOrderId.Desc,
-        SortOrderId.Desc => SortOrderId.Asc,
-        _ => SortOrderId.Asc
+        SortOrder.Asc => (SortOrder.Desc, "bi-sort-up"),
+        SortOrder.Desc => (SortOrder.Asc, "bi-sort-down"),
+        _ => throw new UnreachableException(),
     };
-
-    var findQuery = Context.Request.Query["find"];
-    bool isProductsFound = Model != null && Model.Any();
-    bool showChooseOption = ViewBag.ShowChooseOption;
-    bool isOptionChosen = ViewBag.IsOptionChosen;
 }
 
 <div class="container">
@@ -32,17 +24,17 @@
             <div class="col-md mb-2">
                 <div class="input-group">
                     <input type="text" name="find" class="form-control" placeholder="Назва товару..."
-                        value="@findQuery" />
+                           value="@Model.Request.SearchString" />
                     <button class="btn btn-primary" type="submit">
                         <i class="bi bi-search"></i>
                     </button>
-                    @if (isProductsFound && showChooseOption && isOptionChosen)
+                    @if (areProductsFound && Model.IsOptionChosen is false)
                     {
                         <button class="toggle-button toggled" type="button" id="saveQueryButton" title="Зберегти запит">
                             <i class="bi bi-star-fill"></i>
                         </button>
                     }
-                    @if (isProductsFound && showChooseOption && !isOptionChosen)
+                    @if (areProductsFound && Model.IsOptionChosen is true)
                     {
                         <button class="toggle-button" type="button" id="saveQueryButton" title="Прибрати зі збережених">
                             <i class="bi bi-star"></i>
@@ -53,10 +45,10 @@
             <div class="col-sm mb-2 d-flex align-items-center justify-content-end">
                 <label for="sortBy" class="me-2 mb-0">Порядок за:</label>
                 <select name="sortBy" class="form-select" class="form-select me-2" style="width: auto;"
-                    onchange="this.form.submit()">
+                        onchange="this.form.submit()">
                     @foreach (var e in Enum.GetValues<SortBy>())
                     {
-                        if (sortBy != e)
+                        if (Model.Request.SortBy != e)
                         {
                             <option value="@e">@e.ToLocalString()</option>
                         }
@@ -67,20 +59,13 @@
                     }
                 </select>
                 <button class="btn btn-outline-secondary" name="sortOrder" value="@otherSortOrder" type="submit">
-                    @if (sortOrder == SortOrderId.Asc)
-                    {
-                        <i class="bi bi-sort-up"></i>
-                    }
-                    else
-                    {
-                        <i class="bi bi-sort-down"></i>
-                    }
+                    <i class="bi @sortOrderClass"></i>
                 </button>
             </div>
         </div>
     </form>
 
-    @if (!isProductsFound)
+    @if (!areProductsFound)
     {
         <div class="col-12 text-center my-4">
             <h4 class="text-warning">Товари не знайдено</h4>
@@ -92,26 +77,27 @@
     else
     {
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-            @foreach (var product in Model!)
+            @foreach (var pinfo in Model.Products)
             {
                 <div class="col">
                     <div class="card h-100">
-                        <img src="@product.ImageLink" class="card-img-top" alt="@product.Name">
+                        <img src="@pinfo.Product.LinkImage" class="card-img-top" alt="@pinfo.Product.Name">
                         <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
-                            @product.ShopName
+                            @pinfo.Product.Shop
                         </span>
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="badge bg-primary fs-6 px-2 py-1">
-                                    @product.Price грн
+                                    @pinfo.Product.Price.ToDisplayString() грн
                                 </span>
                                 <span class="text-muted small">
-                                    @product.PriceUnified грн/@product.MeasureUnified
+                                    @pinfo.UnifiedPrice.ToDisplayString()
+                                    грн/@($"{pinfo.UnifiedMeasure.Count.ToDisplayString()}{pinfo.UnifiedMeasure.Unit.ToLocalString()}")
                                 </span>
                             </div>
-                            <h5 class="card-title text-center mb-3">@Html.Raw(product.Name)</h5>
+                            <h5 class="card-title text-center mb-3">@pinfo.Product.Name</h5>
                             <div class="mt-auto text-center">
-                                <a href="@product.ProductLink" target="_blank" class="btn btn-outline-secondary w-100">
+                                <a href="@pinfo.Product.LinkProduct" target="_blank" class="btn btn-outline-secondary w-100">
                                     На сайт магазину
                                 </a>
                             </div>
@@ -121,15 +107,15 @@
             }
         </div>
 
-
         <nav aria-label="Product pagination" class="mt-4">
             <ul class="pagination justify-content-center">
-                @if (Model.HasPreviousPage)
+                @if (Model.Products.HasPreviousPage)
                 {
                     <li class="page-item">
-                        <a class="page-link" asp-route-find="@findQuery" asp-route-sortBy="@sortBy"
-                            asp-route-sortOrder="@sortOrder" asp-route-page="@(Model.PageNo - 1)"
-                            asp-route-pageSize="@(Model.PageSize)">Назад</a>
+                        <a class="page-link" asp-route-find="@Model.Request.SearchString"
+                           asp-route-sortBy="@Model.Request.SortBy" asp-route-sortOrder="@Model.Request.SortOrder"
+                           asp-route-page="@(Model.Products.PageNo - 1)"
+                           asp-route-pageSize="@Model.Products.PageSize">Назад</a>
                     </li>
                 }
                 else
@@ -140,15 +126,16 @@
                 }
 
                 <li class="page-item active">
-                    <span class="page-link">Сторінка @Model.PageNo з @Model.TotalPages</span>
+                    <span class="page-link">Сторінка @(Model.Products.PageNo + 1) з @Model.Products.PagesCount</span>
                 </li>
 
-                @if (Model.HasNextPage)
+                @if (Model.Products.HasNextPage)
                 {
                     <li class="page-item">
-                        <a class="page-link" asp-route-find="@findQuery" asp-route-sortBy="@sortBy"
-                            asp-route-sortOrder="@sortOrder" asp-route-page="@(Model.PageNo + 1)"
-                            asp-route-pageSize="@(Model.PageSize)">Вперед</a>
+                        <a class="page-link" asp-route-find="@Model.Request.SearchString"
+                           asp-route-sortBy="@Model.Request.SortBy" asp-route-sortOrder="@Model.Request.SortOrder"
+                           asp-route-page="@(Model.Products.PageNo + 1)"
+                           asp-route-pageSize="@Model.Products.PageSize">Вперед</a>
                     </li>
                 }
                 else
@@ -160,7 +147,7 @@
             </ul>
         </nav>
     }
-    </div>
+</div>
 
 <style>
     .card {
@@ -221,10 +208,10 @@
             $(this).toggleClass("toggled");
             $(this).find("i").toggleClass("bi-star bi-star-fill");
             const requestData = {
-                Find: "@Html.Raw(findQuery)",
-                SortBy: @((int)sortBy),
+                Find: "@Model.Request.SearchString",
+                SortBy: @((int)Model.Request.SortBy),
                 SortOrder: @((int)sortOrder)
-                }
+            }
             $.ajax({
                 url: '/Request/Toggle',
                 type: 'POST',

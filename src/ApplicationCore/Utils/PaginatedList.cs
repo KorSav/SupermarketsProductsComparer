@@ -1,7 +1,7 @@
 namespace ApplicationCore.Utils;
 
 /// <summary>
-/// Page's number is zero based
+/// Page number is zero based
 /// </summary>
 public class PaginatedList<T> : List<T>
 {

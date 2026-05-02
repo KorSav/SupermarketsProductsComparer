@@ -18,7 +18,7 @@ public static class ApplicationBuilderExtensions
         var config = builder.Configuration;
         builder
             .Services.AddOptions<RepositoryFreshUpServiceOptions>()
-            .Bind(config.GetSection("Delays:DbFreshUpHrs"))
+            .Configure(o => o.Interval = config.GetSection("Delays:DbFreshUpHrs").Get<TimeSpan>())
             .ValidateDataAnnotations()
             .ValidateOnStart();
         return builder;

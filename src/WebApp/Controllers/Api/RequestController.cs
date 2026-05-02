@@ -1,28 +1,24 @@
+using ApplicationCore.Entities.Request;
+using ApplicationCore.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using program.DataSources.Repository.Entities;
-using program.Domain.Entities;
-using program.Domain.Entities.Request;
-using program.Domain.Mappings;
-using program.Domain.Services;
-using program.Models.Request;
+using WebApp.Controllers.Mappings;
 
-namespace program.Api;
+namespace WebApp.Controllers.Api;
 
 [ApiController]
 [Route("Request")]
-public class RequestController(StoredRequestsService requestService) : Controller
+public class RequestController(StoredRequestsService requestService) : ControllerBase
 {
     private readonly StoredRequestsService _requestService = requestService;
 
     [HttpPost]
     [Authorize]
     [Route("Toggle")]
-    public async Task<IActionResult> Toggle(RequestViewModel requestViewModel)
+    public async Task<IActionResult> Toggle(Request request, CancellationToken ct)
     {
-        User user = Domain.Entities.User.FromClaimsPrincipal(User)!;
-        Request request = requestViewModel.ToRequest(user.Id);
-        await _requestService.ToggleRequestAsync(request);
+        var user = User.ToUser();
+        await _requestService.ToggleAsync(request, user.Id, ct);
         return Ok();
     }
 }

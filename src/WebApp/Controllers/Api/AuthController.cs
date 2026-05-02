@@ -1,73 +1,68 @@
-using System.Security.Claims;
+using ApplicationCore.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using program.Domain.Entities;
-using program.Domain.Mappings;
-using program.Domain.Services;
-using program.Models;
-using program.Models.User;
+using WebApp.Controllers.DTOs;
+using WebApp.Controllers.Mappings;
 
-namespace program.Api;
+namespace WebApp.Controllers.Api;
 
-public class AuthController(UserService userService) : Controller
+public class AuthController(UserService userService) : ControllerBase
 {
-    private readonly UserService _userService = userService;
+    const string _scheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
     [HttpPost]
-    public async Task<IActionResult> SignIn([FromBody] UserRegisterViewModel userViewModel)
+    public async Task<IActionResult> Register([FromBody] UserRegisterDto userViewModel)
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
             return BadRequest(new { Errors = errors });
         }
 
-        User user = userViewModel.ToUser();
-        if (await _userService.TryRegister(user) is false)
-            return BadRequest(new { Errors = new List<string> { "Користувач з даним іменем чи поштою вже існує" } });
+        var result = await userService.TryRegisterAsync(
+            userViewModel.Name,
+            userViewModel.Email,
+            userViewModel.Password
+        );
+        if (!result.IsSuccess)
+            return BadRequest(new { Errors = result.ErrorList });
 
-        await SignInHttpCtxAsync(user);
+        await HttpContext.SignInAsync(result.Value.ToClaimsPrincipal(_scheme));
         return Ok();
     }
 
-
     [HttpPost]
-    public async Task<IActionResult> LogIn([FromBody] UserLogInViewModel userViewModel)
+    public async Task<IActionResult> Login([FromBody] UserLoginDto userViewModel)
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
             return BadRequest(new { Errors = errors });
         }
 
-        User user = userViewModel.ToUser();
-        if (await _userService.IsRegisteredAsync(user) is false)
-            return BadRequest("Користувач не зареєстрований");
-        await SignInHttpCtxAsync(user);
+        var result = await userService.TryLoginAsync(
+            userViewModel.Name,
+            userViewModel.Email,
+            userViewModel.Password
+        );
+        if (!result.IsSuccess)
+            return BadRequest(new { Errors = result.ErrorList });
+        await HttpContext.SignInAsync(result.Value.ToClaimsPrincipal(_scheme));
         return Ok();
     }
 
     [Authorize]
-    public async Task<IActionResult> LogOut()
+    public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Redirect("/");
-    }
-
-    private async Task SignInHttpCtxAsync(User user)
-    {
-        User userFull = await _userService.RefillAsync(user);
-        var claims = new List<Claim>() {
-            new("Id", userFull.Id.ToString()),
-            new(ClaimTypes.Name, userFull.Name),
-            new(ClaimTypes.Email, userFull.Email)
-        };
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await HttpContext!.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(claimsIdentity)
-        );
     }
 }

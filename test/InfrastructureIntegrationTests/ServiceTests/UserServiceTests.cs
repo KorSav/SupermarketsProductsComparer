@@ -18,7 +18,7 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            var result = await service.TryRegister("user name", "user surname", "P@ssw0rd");
+            var result = await service.TryRegisterAsync("user name", "user surname", "P@ssw0rd");
             registered = result.Value!;
         }
 
@@ -39,7 +39,7 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            var result = await service.TryRegister("user name", "user surname", "P@ssw0rd");
+            var result = await service.TryRegisterAsync("user name", "user surname", "P@ssw0rd");
             registered = result.Value!;
         }
 
@@ -48,7 +48,7 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            loginResult = await service.TryRegister("user name", "user surname", "P@ssw0rd");
+            loginResult = await service.TryRegisterAsync("user name", "user surname", "P@ssw0rd");
         }
 
         // Assert
@@ -65,7 +65,7 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            var result = await service.TryRegister("user name", "user surname", "P@ssw0rd");
+            var result = await service.TryRegisterAsync("user name", "user surname", "P@ssw0rd");
             registered = result.Value!;
         }
 
@@ -74,7 +74,7 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            loginResult = await service.TryLogin("user name", "user surname", "P@ssw0rd");
+            loginResult = await service.TryLoginAsync("user name", "user surname", "P@ssw0rd");
         }
 
         // Assert

@@ -1,5 +1,4 @@
 using ApplicationCore;
-using ApplicationCore.Entities.Product;
 using ApplicationCore.Services;
 using DotNetEnv;
 using Infrastructure;
@@ -12,9 +11,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IRequestRepository, RequestRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder
     .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -24,12 +20,17 @@ builder
         options.LoginPath = "/";
     });
 
+builder.AddApplicationCore();
 builder.AddInfrastructure();
 
 #if AVOID_PARSING
 Console.WriteLine("Started without data parsing");
-builder.Services.RemoveAll<RepositoryFreshUpService>();
-builder.Services.AddScoped<IShopProductProvider, NoOpProvider>();
+var hosted = builder.Services.FirstOrDefault(s =>
+    s.ImplementationType == typeof(RepositoryFreshUpService)
+);
+builder.Services.Remove(hosted!);
+builder.Services.RemoveAll<IShopProductProvider>();
+// builder.Services.AddScoped<IShopProductProvider, NoOpProvider>();
 #endif
 
 var app = builder.Build();
@@ -47,11 +48,11 @@ app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Inde
 
 app.Run();
 
-file class NoOpProvider(ILogger<NoOpProvider> logger) : IShopProductProvider
-{
-    public IAsyncEnumerable<Product> GetAllAsync(CancellationToken cancellationToken)
-    {
-        logger.LogInformation("Returning no products as parsing result");
-        return AsyncEnumerable.Empty<Product>();
-    }
-}
+// file class NoOpProvider(ILogger<NoOpProvider> logger) : IShopProductProvider
+// {
+//     public IAsyncEnumerable<Product> GetAllAsync(CancellationToken cancellationToken)
+//     {
+//         logger.LogInformation("Returning no products as parsing result");
+//         return AsyncEnumerable.Empty<Product>();
+//     }
+// }

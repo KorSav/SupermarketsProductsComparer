@@ -1,14 +1,13 @@
 using System.ComponentModel.DataAnnotations;
-using FoolProof.Core;
 
-namespace program.Models;
+namespace WebApp.Controllers.DTOs;
 
-public class UserLogInViewModel
+public class UserLoginDto
 {
-    [RequiredIfEmpty(nameof(Email))]
+    [Required]
     public string Name { get; set; } = string.Empty;
 
-    [RequiredIfEmpty(nameof(Name))]
+    [Required]
     public string Email { get; set; } = string.Empty;
 
     [Required]

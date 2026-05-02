@@ -1,23 +1,29 @@
-using program.Domain.Entities.Product;
+using System.Globalization;
+using ApplicationCore.Entities.Product;
 
-namespace program.Domain.Mappings;
+namespace WebApp.Controllers.Mappings;
 
 public static class LocalizedToStringExtensions
 {
-    public static string ToLocalString(this MeasureId measureId) => measureId switch
-    {
-        MeasureId.Kg => "кг",
-        MeasureId.L => "л",
-        MeasureId.M => "м",
-        MeasureId.No => "шт",
-        _ => throw new NotImplementedException()
-    };
+    public static string ToLocalString(this MeasureUnit unit) =>
+        unit switch
+        {
+            MeasureUnit.KiloGram => "кг",
+            MeasureUnit.Litre => "л",
+            MeasureUnit.Meter => "м",
+            MeasureUnit.Count => "шт",
+            _ => throw new NotImplementedException(),
+        };
 
-    public static string ToLocalString(this Shop shopId) => shopId switch
-    {
-        Shop.Silpo => "Сільпо",
-        Shop.Fora => "Фора",
-        Shop.Fozzy => "Фоззі",
-        _ => throw new NotImplementedException()
-    };
+    public static string ToLocalString(this Shop shop) =>
+        shop switch
+        {
+            Shop.Silpo => "Сільпо",
+            Shop.Fora => "Фора",
+            Shop.Fozzy => "Фоззі",
+            _ => throw new NotImplementedException(),
+        };
+
+    public static string ToDisplayString(this decimal value) =>
+        value.ToString("#,##0.##", CultureInfo.InvariantCulture);
 }

@@ -14,7 +14,7 @@ public readonly record struct Measure
     public Measure(decimal count, Unit unit)
     {
         ArgumentException.ThrowIfUndefinedEnum(unit);
-        ArgumentOutOfRangeException.ThrowIfLessThan(count, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(count, 0);
 
         Unit = unit;
         Count = count;

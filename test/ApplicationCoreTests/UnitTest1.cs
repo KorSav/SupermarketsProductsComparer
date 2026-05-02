@@ -1,14 +1,23 @@
-﻿namespace ApplicationCoreTests;
+﻿using System.Globalization;
 
-public class UnitTest1
+namespace ApplicationCoreTests;
+
+public class DecimalFormatTests
 {
-    [Fact]
-    public void ConsiderThisDecimalFactInViews() //TODO
+    [Theory]
+    [MemberData(nameof(Data_ToPriceString_HasAtMost2PlacesAfterDot))]
+    public void ToPriceString_HasAtMost2PlacesAfterDot(decimal value, string exp) //TODO
     {
-        var a = 3m;
-        var b = 3.00m;
-        Assert.Equal(a, b);
-        Assert.Equal(a.ToString("G29"), b.ToString("G29"));
-        Assert.Equal(a.ToString(), b.ToString()); // but this fails
+        Assert.Equal(value.ToString("#,##0.##", CultureInfo.InvariantCulture), exp);
     }
+
+    public static TheoryData<decimal, string> Data_ToPriceString_HasAtMost2PlacesAfterDot() =>
+        [
+            (1.3456m, "1.35"),
+            (1234.567m, "1,234.57"),
+            (1.0000m, "1"),
+            (0001.000m, "1"),
+            (1_234_567.23456m, "1,234,567.23"),
+            (1_234_567.00000m, "1,234,567"),
+        ];
 }

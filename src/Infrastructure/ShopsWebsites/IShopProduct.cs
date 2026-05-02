@@ -33,8 +33,8 @@ public interface IShopProduct
             resName,
             Price,
             resMeasure,
-            new Uri(resLinkImage),
             new Uri(resLinkProduct),
+            new Uri(resLinkImage),
             Shop
         );
     }

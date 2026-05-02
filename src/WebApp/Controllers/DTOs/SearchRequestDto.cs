@@ -1,24 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
-using program.DataSources.Repository.Entities;
-using program.Domain.Entities.Request;
+using ApplicationCore.Entities.Request;
 
-namespace program.Controllers.DTOs;
+namespace WebApp.Controllers.DTOs;
 
-public record SearchRequestDto(
-    string ProductName,
-    int Page = 1,
-    int PageSize = 24,
+public record RequestDto(
+    string Find = "",
+    int Page = 0,
+    int PageLimit = 30,
     SortBy SortBy = SortBy.Name,
     SortOrder SortOrder = SortOrder.Asc
 )
 {
-    public Request ToDomainRequest()
-    {
-        return new Request
-        {
-            Name = ProductName,
-            SortId = SortBy,
-            SortOrderId = SortOrder,
-        };
-    }
+    public Request ToRequest() => new(Find, SortBy, SortOrder);
 }

@@ -1,59 +1,81 @@
 using System.Diagnostics;
+using ApplicationCore.Services;
 using Microsoft.AspNetCore.Mvc;
-using program.DataSources.Repository.Entities;
-using program.Domain.Entities;
-using program.Domain.Entities.Product;
-using program.Domain.Entities.Request;
-using program.Domain.Mappings;
-using program.Domain.Services;
-using program.Domain.Utils;
-using program.Models;
+using WebApp.Controllers.DTOs;
+using WebApp.Controllers.Mappings;
+using WebApp.Models;
 
-namespace program.Controllers;
+namespace WebApp.Controllers;
 
-public class HomeController : Controller
+public class HomeController(ProductService productService) : Controller
 {
-    private readonly ProductService _productService;
-    private readonly StoredRequestsService _requestService;
-
-    public HomeController(ProductService productService, StoredRequestsService requestService)
+    public async Task<IActionResult> Index(
+        [FromQuery(Name = "")] RequestDto dto,
+        CancellationToken ct
+    )
     {
-        _productService = productService;
-        _requestService = requestService;
-    }
+        var request = dto.ToRequest();
+        if (User.Identity is null or { IsAuthenticated: false })
+        {
+            var result = await productService.GetProductsAsync(
+                request,
+                dto.Page,
+                dto.PageLimit,
+                ct
+            );
+            return View(new HomeViewModel(result, request, isOptionChosen: null));
+        }
+        var user = User.ToUser();
+        var authnGetResult = await productService.AuthnGetProductsAsync(
+            request,
+            dto.Page,
+            dto.PageLimit,
+            user.Id,
+            ct
+        );
+        return View(new HomeViewModel(authnGetResult, request));
+        // // bool isOptionChosen = false;
+        // // bool showChooseOption = false;
+        // // // PaginatedList<Product> products;
+        // // User? user = Domain.Entities.User.FromClaimsPrincipal(User);
+        // // if (user is not null && searchString is not null)
+        // // {
+        // //     Request request = new()
+        // //     {
+        // //         UserId = user.Id,
+        // //         SortOrderId = sortOrder,
+        // //         SortId = sortBy,
+        // //         Name = searchString,
+        // //     };
+        // //     bool isUpdated = await _requestService.UpdateRequestIfExistsAsync(request);
+        // //     showChooseOption = true;
+        // //     isOptionChosen = isUpdated;
+        // // }
+        // // if (searchString is null || searchString.Trim() == string.Empty)
+        // // {
+        // //     products = await _productService.GetAllProducts(page, pageSize, sortBy, sortOrder);
+        // // }
+        // // else
+        // // {
+        // //     products = await _productService.FindProductsByQueryAsync(
+        // //         searchString,
+        // //         page,
+        // //         pageSize,
+        // //         sortBy,
+        // //         sortOrder
+        // //     );
+        // // }
 
-    public async Task<IActionResult> Index(string? find, int page = 1, int pageSize = 24, SortBy sortBy = SortBy.Name, SortOrder sortOrder = SortOrder.Asc)
-    {
-        bool isOptionChosen = false;
-        bool showChooseOption = false;
-        PaginatedList<Product> products;
-        User? user = Domain.Entities.User.FromClaimsPrincipal(User);
-        if (user is not null && find is not null){
-            Request request = new(){
-                UserId = user.Id,
-                SortOrderId = sortOrder,
-                SortId = sortBy,
-                Name = find
-            };
-            bool isUpdated = await _requestService.UpdateRequestIfExistsAsync(request);
-            showChooseOption = true;
-            isOptionChosen = isUpdated;
-        }
-        if (find is null || find.Trim() == string.Empty){
-            products = await _productService.GetAllProducts(page, pageSize, sortBy, sortOrder);
-        }
-        else{
-            products = await _productService.FindProductsByQueryAsync(find, page, pageSize, sortBy, sortOrder);
-        }
-
-        ViewBag.ShowChooseOption = showChooseOption;
-        ViewBag.IsOptionChosen = isOptionChosen;
-        return View(products.ToProductViewModels());
+        // // ViewBag.ShowChooseOption = showChooseOption;
+        // // ViewBag.IsOptionChosen = isOptionChosen;
+        // return View(products.ToProductViewModels());
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View(
+            new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier }
+        );
     }
 }

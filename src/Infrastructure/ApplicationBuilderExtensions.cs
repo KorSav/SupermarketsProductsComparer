@@ -20,7 +20,6 @@ public static class ApplicationBuilderExtension
 
     private static IHostApplicationBuilder AddRepositories(this IHostApplicationBuilder builder)
     {
-        // builder.Services.AddSingleton<PasswordHasher<string>>();
         builder.Services.AddDbContext<AppDbContext>(options =>
             options
                 .UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
@@ -28,7 +27,6 @@ public static class ApplicationBuilderExtension
         );
         builder
             .Services.AddScoped<IProductRepository, ProductRepository>()
-            .AddScoped<IBulkUpsertScope, BulkUpsertScope>()
             .AddScoped<IRequestRepository, RequestRepository>()
             .AddScoped<IUserRepository, UserRepository>();
         return builder;
@@ -58,30 +56,18 @@ public static class ApplicationBuilderExtension
         }
         builder
             .Services.AddOptions<ShopProductProviderOptions>()
-            .Bind(config.GetSection($"ShopDataRetrivers:DelayBetweenRequests"))
-            .ValidateDataAnnotations()
-            .Validate(
-                options =>
-                    TimeSpan.FromSeconds(3) <= options.DelayBetweenRequests
-                    && options.DelayBetweenRequests <= TimeSpan.FromMinutes(1),
-                "Delay between requests must fall in range [00:00:03, 00:01:00]"
+            .Configure(o =>
+                o.DelayBetweenRequests = config
+                    .GetSection("ShopDataRetrievers:DelayBetweenRequests")
+                    .Get<TimeSpan>()
             )
+            .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        var socketsHandler = new SocketsHttpHandler()
-        {
-            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
-        };
-        builder.Services.AddSingleton<IShopDataRetriever>(sp => new ForaDataRetriever(
-            sp.GetRequiredService<IOptionsMonitor<ShopDataRetrieverOptions>>(),
-            new HttpClient(socketsHandler)
-        ));
-        builder.Services.AddSingleton<IShopDataRetriever>(sp => new SilpoDataRetriever(
-            sp.GetRequiredService<IOptionsMonitor<ShopDataRetrieverOptions>>(),
-            new HttpClient(socketsHandler)
-        ));
-        builder.Services.AddSingleton<IShopDataRetriever, FozzyDataRetriever>();
-        builder.Services.AddSingleton<IShopProductProvider, ShopProductProvider>();
+        builder.Services.AddHttpClient<IShopDataRetriever, ForaDataRetriever>();
+        builder.Services.AddHttpClient<IShopDataRetriever, SilpoDataRetriever>();
+        builder.Services.AddScoped<IShopDataRetriever, FozzyDataRetriever>();
+        builder.Services.AddScoped<IShopProductProvider, ShopProductProvider>();
         return builder;
     }
 

@@ -1,41 +1,34 @@
+using ApplicationCore.Entities.Product;
+using ApplicationCore.Entities.Request;
+using ApplicationCore.Services;
+using ApplicationCore.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using program.Domain.Entities;
-using program.Domain.Mappings;
-using program.Domain.Services;
-using program.Domain.Utils;
-using program.Models;
-using program.Models.Request;
+using WebApp.Controllers.Mappings;
 
-namespace program.Controllers;
+namespace WebApp.Controllers;
 
-public class ChosenRequestsController : Controller
+public class ChosenRequestsController(
+    StoredRequestsService storedRequestsService,
+    ProductService productService
+) : Controller
 {
-    private readonly StoredRequestsService _requestService;
-    private readonly ProductService _productService;
-    public ChosenRequestsController(StoredRequestsService requestService, ProductService productService)
-    {
-        _requestService = requestService;
-        _productService = productService;
-    }
-
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> Index(int NoProductsPerFind = 4)
+    public async Task<IActionResult> Index(int productsPerRequest, CancellationToken ct)
     {
-        User user = Domain.Entities.User.FromClaimsPrincipal(User)!;
-        var requests = await _requestService.GetRequestsAsync(user);
-        var productLists = new Dictionary<RequestInfoViewModel, PaginatedList<ProductViewModel>>();
-        foreach (var request in requests)
+        var user = User.ToUser();
+        var storedRequests = await storedRequestsService.GetAllForUserAsync(user.Id, ct);
+        var productLists = new Dictionary<Request, PaginatedList<Product>>();
+        foreach (var stored in storedRequests)
         {
-            var productList = await _productService.FindProductsByQueryAsync(
-                request.Name, 1, NoProductsPerFind,
-                request.SortId, request.SortOrderId
+            var productList = await productService.GetProductsAsync(
+                stored.Request,
+                0,
+                productsPerRequest,
+                ct
             );
-            productLists.Add(
-                request.ToRequestViewModel(),
-                productList.ToProductViewModels()
-            );
+            productLists.Add(stored.Request, productList);
         }
         return View(productLists);
     }

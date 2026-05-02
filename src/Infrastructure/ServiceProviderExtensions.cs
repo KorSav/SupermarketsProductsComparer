@@ -6,12 +6,12 @@ namespace Infrastructure;
 
 public static class ServiceProviderExtensions
 {
-    public static async Task ThrowIfDbIsNotAccessibleAsync(this IServiceProvider sp)
+    public static async Task ThrowIfDbIsNotAccessibleAsync(this IServiceProvider rootProvider)
     {
         // Simple check to catch invalid startup, enforces db to be accessible in a valid state.
         // There are no any validation for db failure after app started, might be implemented in future
-        await using var scope = sp.CreateAsyncScope();
-        var ctx = sp.GetRequiredService<AppDbContext>();
+        await using var scope = rootProvider.CreateAsyncScope();
+        var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         if (!await ctx.Database.CanConnectAsync())
         {
             throw new InvalidOperationException(
