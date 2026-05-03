@@ -1,0 +1,29 @@
+using System.Globalization;
+using ApplicationCore.Entities.Product;
+
+namespace WebApp.Controllers.Mappings;
+
+public static class LocalizedToStringExtensions
+{
+    public static string ToLocalString(this MeasureUnit unit) =>
+        unit switch
+        {
+            MeasureUnit.KiloGram => "кг",
+            MeasureUnit.Litre => "л",
+            MeasureUnit.Meter => "м",
+            MeasureUnit.Count => "шт",
+            _ => throw new NotImplementedException(),
+        };
+
+    public static string ToLocalString(this Shop shop) =>
+        shop switch
+        {
+            Shop.Silpo => "Сільпо",
+            Shop.Fora => "Фора",
+            Shop.Fozzy => "Фоззі",
+            _ => throw new NotImplementedException(),
+        };
+
+    public static string ToDisplayString(this decimal value) =>
+        value.ToString("#,##0.##", CultureInfo.InvariantCulture);
+}
