@@ -16,14 +16,6 @@ public record HomeViewModel(
     public HomeViewModel(PaginatedList<Product> products, Request request, bool? isOptionChosen)
         : this(products.Select(p => new ProductInfo(p)), request, isOptionChosen, true) { }
 
-    public HomeViewModel(AuthnGetProductsResult authnGetResult, Request request)
-        : this(
-            authnGetResult.Products.Select(p => new ProductInfo(p)),
-            request,
-            authnGetResult.IsStored,
-            true
-        ) { }
-
     public record ProductInfo
     {
         public Product Product { get; }

@@ -2,7 +2,7 @@ using ApplicationCore.Entities.Request;
 
 namespace WebApp.Controllers.DTOs;
 
-public record RequestDto(
+public record FindRequestDto(
     string Find = "",
     int Page = 0,
     int PageLimit = 30,

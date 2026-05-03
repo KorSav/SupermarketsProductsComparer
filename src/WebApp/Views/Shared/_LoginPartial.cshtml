@@ -162,7 +162,7 @@
                 Password: $("#loginPassword").val()
             };
             $.ajax({
-                url: '/Auth/LogIn',
+                url: '/Auth/Login',
                 type: 'POST',
                 contentType: "application/json",
                 data: JSON.stringify(formData),
@@ -196,7 +196,7 @@
                 PasswordDup: $("#registerConfirmPassword").val()
             };
             $.ajax({
-                url: '/Auth/SignIn',
+                url: '/Auth/Register',
                 type: 'POST',
                 contentType: "application/json",
                 data: JSON.stringify(formData),

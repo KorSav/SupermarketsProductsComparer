@@ -23,21 +23,21 @@
         <div class="row align-items-center">
             <div class="col-md mb-2">
                 <div class="input-group">
-                    <input type="text" name="find" class="form-control" placeholder="Назва товару..."
+                    <input type="text" name="find" class="form-control" id="searchInput" placeholder="Назва товару..."
                            value="@Model.Request.SearchString" />
                     <button class="btn btn-primary" type="submit">
                         <i class="bi bi-search"></i>
                     </button>
                     @if (areProductsFound && Model.IsOptionChosen is false)
                     {
-                        <button class="toggle-button toggled" type="button" id="saveQueryButton" title="Зберегти запит">
-                            <i class="bi bi-star-fill"></i>
+                        <button class="toggle-button" type="button" id="saveQueryButton" title="Зберегти запит">
+                            <i class="bi bi-star"></i>
                         </button>
                     }
                     @if (areProductsFound && Model.IsOptionChosen is true)
                     {
-                        <button class="toggle-button" type="button" id="saveQueryButton" title="Прибрати зі збережених">
-                            <i class="bi bi-star"></i>
+                        <button class="toggle-button toggled" type="button" id="saveQueryButton" title="Прибрати зі збережених">
+                            <i class="bi bi-star-fill"></i>
                         </button>
                     }
                 </div>
@@ -208,7 +208,7 @@
             $(this).toggleClass("toggled");
             $(this).find("i").toggleClass("bi-star bi-star-fill");
             const requestData = {
-                Find: "@Model.Request.SearchString",
+                Find: $("#searchInput").val(),
                 SortBy: @((int)Model.Request.SortBy),
                 SortOrder: @((int)sortOrder)
             }

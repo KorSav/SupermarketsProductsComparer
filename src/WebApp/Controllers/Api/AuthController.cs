@@ -30,7 +30,9 @@ public class AuthController(UserService userService) : ControllerBase
             userViewModel.Password
         );
         if (!result.IsSuccess)
-            return BadRequest(new { Errors = result.ErrorList });
+            return BadRequest(
+                new { Errors = result.ErrorList.Select(e => e.Description).Distinct() }
+            );
 
         await HttpContext.SignInAsync(result.Value.ToClaimsPrincipal(_scheme));
         return Ok();
@@ -54,7 +56,9 @@ public class AuthController(UserService userService) : ControllerBase
             userViewModel.Password
         );
         if (!result.IsSuccess)
-            return BadRequest(new { Errors = result.ErrorList });
+            return BadRequest(
+                new { Errors = result.ErrorList.Select(e => e.Description).Distinct() }
+            );
         await HttpContext.SignInAsync(result.Value.ToClaimsPrincipal(_scheme));
         return Ok();
     }

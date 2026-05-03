@@ -1,7 +1,7 @@
-using ApplicationCore.Entities.Request;
 using ApplicationCore.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebApp.Controllers.DTOs;
 using WebApp.Controllers.Mappings;
 
 namespace WebApp.Controllers.Api;
@@ -15,10 +15,10 @@ public class RequestController(StoredRequestsService requestService) : Controlle
     [HttpPost]
     [Authorize]
     [Route("Toggle")]
-    public async Task<IActionResult> Toggle(Request request, CancellationToken ct)
+    public async Task<IActionResult> Toggle(ToggleRequestDto toggleRequest, CancellationToken ct)
     {
         var user = User.ToUser();
-        await _requestService.ToggleAsync(request, user.Id, ct);
+        await _requestService.ToggleAsync(toggleRequest.ToRequest(), user.Id, ct);
         return Ok();
     }
 }

@@ -15,20 +15,20 @@ public class ChosenRequestsController(
 {
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> Index(int productsPerRequest, CancellationToken ct)
+    public async Task<IActionResult> Index(CancellationToken ct)
     {
         var user = User.ToUser();
         var storedRequests = await storedRequestsService.GetAllForUserAsync(user.Id, ct);
-        var productLists = new Dictionary<Request, PaginatedList<Product>>();
+        var productLists = new Dictionary<StoredRequest, PaginatedList<Product>>();
         foreach (var stored in storedRequests)
         {
             var productList = await productService.GetProductsAsync(
                 stored.Request,
                 0,
-                productsPerRequest,
+                4, // productsPerRequest
                 ct
             );
-            productLists.Add(stored.Request, productList);
+            productLists.Add(stored, productList);
         }
         return View(productLists);
     }
