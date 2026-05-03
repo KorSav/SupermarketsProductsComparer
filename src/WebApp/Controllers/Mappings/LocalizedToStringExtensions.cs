@@ -10,9 +10,10 @@ public static class LocalizedToStringExtensions
         {
             MeasureUnit.KiloGram => "кг",
             MeasureUnit.Litre => "л",
+            MeasureUnit.MiliLitre => "мл",
             MeasureUnit.Meter => "м",
             MeasureUnit.Count => "шт",
-            _ => throw new NotImplementedException(),
+            _ => throw new NotImplementedException($"Missing translation for: {unit}"),
         };
 
     public static string ToLocalString(this Shop shop) =>

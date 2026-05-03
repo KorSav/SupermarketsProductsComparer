@@ -1,0 +1,670 @@
+@model ProductViewModel
+@using System.Text.Json
+@using ApplicationCore.Entities.Product
+@using WebApp.Controllers.Mappings
+
+@{
+    var json = Model.ToJson();
+
+    var allShopsJson = JsonSerializer.Serialize(
+        Enum.GetValues<Shop>()
+            .Select(s => new
+            {
+                Value = s.ToLocalString(),
+                Text = s.ToLocalString()
+            })
+            .ToList()
+    );
+}
+
+<style>
+    .product-page {
+        max-width: 1440px;
+    }
+
+    .product-main-image {
+        width: 100%;
+        height: 420px;
+        object-fit: contain;
+        background: #fff;
+    }
+
+    .price-display {
+        font-size: clamp(2.4rem, 5vw, 4.5rem);
+        line-height: 1;
+        font-weight: 600;
+        letter-spacing: -0.04em;
+    }
+
+    .unified-price {
+        font-size: clamp(1.25rem, 2.2vw, 2rem);
+        color: var(--bs-secondary-color);
+        font-weight: 400;
+        letter-spacing: normal;
+    }
+
+    .chart-card {
+        min-height: 420px;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 330px;
+    }
+
+    .shop-btn.unavailable {
+        opacity: .45;
+        cursor: not-allowed;
+    }
+
+    .custom-legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1.25rem;
+        margin-top: 1rem;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .legend-dot {
+        width: .85rem;
+        height: .85rem;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .legend-dot.unavailable {
+        background: transparent !important;
+        border: 2px dotted var(--bs-secondary-color);
+    }
+
+    .recommended-section {
+        margin-top: 3rem;
+    }
+
+    @@media (max-width: 991.98px) {
+        .product-main-image {
+            height: 340px;
+        }
+
+        .chart-container {
+            height: 300px;
+        }
+    }
+</style>
+
+<div class="container-fluid product-page py-4">
+
+    <!-- SEARCH -->
+    <form class="row justify-content-center mb-4" method="get">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="input-group input-group-lg">
+                <input class="form-control" name="query" placeholder="Type here to search" />
+                <button class="btn btn-primary" type="submit" aria-label="Search">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <div class="row g-4 align-items-start">
+
+        <!-- LEFT: PRODUCT CARD -->
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h1 id="product-name" class="h3 mb-0"></h1>
+                </div>
+
+                <div class="card-body">
+                    <img id="product-image" class="product-main-image img-fluid rounded border" alt="" />
+
+                    <div class="d-grid gap-2 mt-3">
+                        <a id="product-link" target="_blank" class="btn btn-outline-primary btn-lg">
+                            Go to shop
+                        </a>
+
+                        <button type="button" class="btn btn-outline-secondary btn-lg">
+                            Add to list
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER + RIGHT -->
+        <div class="col-12 col-lg-8">
+            <div class="row g-4">
+
+                <!-- PRICE / DETAILS -->
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+
+                            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4">
+
+                                <div>
+                                    <div class="price-display">
+                                        <span id="price"></span>
+                                        <span id="unified-price" class="unified-price"></span>
+                                    </div>
+
+                                    <div id="delta-box" class="mt-3"></div>
+
+                                    <div class="text-muted mt-2">
+                                        Average price in shop:
+                                        <strong id="avg" class="text-body"></strong>
+                                    </div>
+                                </div>
+
+                                <div class="controls-panel" style="min-width: 280px;">
+
+                                    <!-- SHOP SELECT -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Shop</label>
+                                        <div id="shop-buttons" class="btn-group w-100" role="group"></div>
+                                    </div>
+
+                                    <!-- MEASURE -->
+                                    <div class="mb-3">
+                                        <label for="measure-select" class="form-label fw-semibold">Amount</label>
+                                        <select id="measure-select" class="form-select form-select-lg"></select>
+                                    </div>
+
+                                    <!-- CHART MODE -->
+                                    <div>
+                                        <label class="form-label fw-semibold">Chart mode</label>
+
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="mode" id="mode-amount" value="amount" checked />
+                                            <label class="form-check-label" for="mode-amount">
+                                                Per amount
+                                            </label>
+                                        </div>
+
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="mode" id="mode-unified" value="unified" />
+                                            <label class="form-check-label" for="mode-unified">
+                                                Unified price
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHART -->
+                <div class="col-12">
+                    <div class="card chart-card shadow-sm">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h2 class="h5 mb-0">Price history</h2>
+                            <span class="text-muted small">Click a line to select product</span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="chart"></canvas>
+                            </div>
+
+                            <div id="chart-legend" class="custom-legend"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RECOMMENDED -->
+    <div class="recommended-section">
+        <h2 class="h4 mb-3">Recommended products</h2>
+
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var pinfo in Model.Recommended)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <img src="@pinfo.Product.LinkImage" class="card-img-top p-3" alt="@pinfo.Product.Name"
+                             style="height: 220px; object-fit: contain;">
+
+                        <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
+                            @pinfo.Product.Shop
+                        </span>
+
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-3 gap-2">
+                                <span class="badge bg-primary fs-6 px-2 py-1">
+                                    @pinfo.Product.Price.ToDisplayString() грн
+                                </span>
+
+                                <span class="text-muted small">
+                                    @pinfo.UnifiedPrice.ToDisplayString()
+                                    грн/@($"{pinfo.UnifiedMeasure.Count.ToDisplayString()}{pinfo.UnifiedMeasure.Unit.ToLocalString()}")
+                                </span>
+                            </div>
+
+                            <h5 class="card-title text-center mb-3">@pinfo.Product.Name</h5>
+
+                            <div class="mt-auto text-center">
+                                <a href="@pinfo.Product.LinkProduct" target="_blank"
+                                   class="btn btn-outline-secondary w-100">
+                                    На сайт магазину
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const model = @Html.Raw(json);
+        const allShops = @Html.Raw(allShopsJson);
+
+        let currentId = model.Details[0].Id;
+        let currentShop = model.Details[0].Shop;
+        let currentMode = "amount";
+        let chart = null;
+
+        const shopColors = [
+            "rgb(220, 53, 69)",     // Bootstrap danger-ish
+            "rgb(25, 135, 84)",     // Bootstrap success-ish
+            "rgb(255, 193, 7)"      // Bootstrap warning-ish
+        ];
+
+        const unavailableColor = "rgb(173, 181, 189)";
+
+        const glowPlugin = {
+            id: "activeLineGlow",
+            beforeDatasetDraw(chart, args) {
+                const dataset = chart.data.datasets[args.index];
+
+                if (!dataset.isActiveLine) {
+                    return;
+                }
+
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.shadowColor = dataset.borderColor;
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            },
+            afterDatasetDraw(chart, args) {
+                const dataset = chart.data.datasets[args.index];
+
+                if (dataset.isActiveLine) {
+                    chart.ctx.restore();
+                }
+            }
+        };
+
+        Chart.register(glowPlugin);
+
+        function getDetail(id) {
+            return model.Details.find(d => d.Id === id);
+        }
+
+        function sameMeasure(a, b) {
+            return a.Amount === b.Amount && a.Unit === b.Unit;
+        }
+
+        function formatNumber(value) {
+            const number = Number(value);
+
+            return Number.isInteger(number)
+                ? number.toString()
+                : number.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+        }
+
+        function formatMeasure(measure) {
+            return `${formatNumber(measure.Amount)} ${measure.Unit}`;
+        }
+
+        function getShopIndex(shop) {
+            const index = allShops.findIndex(s => s.Value === shop || s.Text === shop);
+            return index >= 0 ? index : 0;
+        }
+
+        function getShopColor(shop, toneIndex = 0, hasData = true) {
+            if (!hasData) {
+                return unavailableColor;
+            }
+
+            const base = shopColors[getShopIndex(shop) % shopColors.length];
+
+            if (currentMode !== "unified" || toneIndex === 0) {
+                return base;
+            }
+
+            return base
+                .replace("rgb(", "rgba(")
+                .replace(")", `, ${Math.max(0.4, 1 - toneIndex * 0.22)})`);
+        }
+
+        function getShopText(shop) {
+            return allShops.find(s => s.Value === shop || s.Text === shop)?.Text ?? shop;
+        }
+
+        function getAvailableIdsForShop(shop) {
+            return model.ShopMeasureIds
+                .filter(x => x.Shop === shop)
+                .map(x => x.Id);
+        }
+
+        function updateUI() {
+            const d = getDetail(currentId);
+            currentShop = d.Shop;
+
+            document.getElementById("product-name").innerText = d.DisplayName;
+            document.getElementById("product-image").src = d.LinkImage;
+            document.getElementById("product-image").alt = d.DisplayName;
+            document.getElementById("product-link").href = d.LinkProduct;
+
+            document.getElementById("price").innerText = `${formatNumber(d.Price)} грн`;
+            document.getElementById("unified-price").innerText =
+                `(${formatNumber(d.UnifiedPrice)} per ${formatMeasure(d.UnifiedMeasure)})`;
+
+            document.getElementById("avg").innerText = `${formatNumber(d.AveragePrice)} грн`;
+
+            renderPriceComparison(d);
+            renderShops();
+            renderMeasures();
+            renderChart();
+            renderLegend();
+        }
+
+        function renderPriceComparison(d) {
+            const delta = Number(d.Price) - Number(d.AveragePrice);
+            const absDelta = Math.abs(delta);
+
+            const box = document.getElementById("delta-box");
+
+            if (Math.abs(delta) < 0.005) {
+                box.innerHTML = `
+                    <div class="alert alert-secondary py-2 px-3 mb-0 d-inline-flex align-items-center gap-2">
+                        <span>Price is same as usual</span>
+                    </div>
+                `;
+                return;
+            }
+
+            if (delta < 0) {
+                box.innerHTML = `
+                    <div class="alert alert-success py-2 px-3 mb-0 d-inline-flex align-items-center gap-2">
+                        <span class="fs-4 lh-1">↓</span>
+                        <span>${formatNumber(absDelta)} грн cheaper than usual</span>
+                    </div>
+                `;
+            } else {
+                box.innerHTML = `
+                    <div class="alert alert-danger py-2 px-3 mb-0 d-inline-flex align-items-center gap-2">
+                        <span class="fs-4 lh-1">↑</span>
+                        <span>${formatNumber(absDelta)} грн more expensive than usual</span>
+                    </div>
+                `;
+            }
+        }
+
+        function renderShops() {
+            const container = document.getElementById("shop-buttons");
+            container.innerHTML = "";
+
+            allShops.forEach(shopInfo => {
+                const shop = shopInfo.Value;
+                const availableIds = getAvailableIdsForShop(shop);
+                const available = availableIds.length > 0;
+
+                const btn = document.createElement("button");
+
+                btn.type = "button";
+                btn.innerText = shopInfo.Text;
+
+                if (!available) {
+                    btn.className = "btn btn-outline-secondary shop-btn unavailable";
+                    btn.disabled = true;
+                } else if (shop === currentShop) {
+                    btn.className = "btn btn-primary shop-btn";
+                } else {
+                    btn.className = "btn btn-outline-primary shop-btn";
+                }
+
+                btn.onclick = () => {
+                    if (!available) {
+                        return;
+                    }
+
+                    currentShop = shop;
+                    currentId = availableIds[0];
+                    updateUI();
+                };
+
+                container.appendChild(btn);
+            });
+        }
+
+        function renderMeasures() {
+            const select = document.getElementById("measure-select");
+            select.innerHTML = "";
+
+            const options = model.ShopMeasureIds.filter(x => x.Shop === currentShop);
+
+            options.forEach(o => {
+                const detail = getDetail(o.Id);
+                const opt = document.createElement("option");
+
+                opt.value = o.Id;
+                opt.text = formatMeasure(detail.Measure);
+
+                if (o.Id === currentId) {
+                    opt.selected = true;
+                }
+
+                select.appendChild(opt);
+            });
+
+            select.onchange = e => {
+                currentId = Number(e.target.value);
+                updateUI();
+            };
+        }
+
+        function getSortedDateKeys() {
+            return [
+                ...new Set(
+                    model.Chart.flatMap(h =>
+                        h.History.map(x => x.Date.substring(0, 10))
+                    )
+                )
+            ].sort();
+        }
+
+        function renderChart() {
+            const canvas = document.getElementById("chart");
+
+            const oldChart = Chart.getChart(canvas);
+            if (oldChart) {
+                oldChart.destroy();
+            }
+
+            const currentDetail = getDetail(currentId);
+            const dateKeys = getSortedDateKeys();
+
+            const labels = dateKeys.map(x => new Date(x).toLocaleDateString());
+
+            const datasets = [];
+
+            allShops.forEach(shopInfo => {
+                const shop = shopInfo.Value;
+
+                const histories = model.Chart
+                    .filter(h => getDetail(h.ProductDetailId).Shop === shop);
+
+                if (histories.length === 0) {
+                    return;
+                }
+
+                let toneIndex = 0;
+
+                histories.forEach(h => {
+                    const detail = getDetail(h.ProductDetailId);
+
+                    if (currentMode === "amount" && !sameMeasure(detail.Measure, currentDetail.Measure)) {
+                        return;
+                    }
+
+                    const valuesByDate = new Map(
+                        h.History.map(x => [
+                            x.Date.substring(0, 10),
+                            currentMode === "amount" ? Number(x.Price) : Number(x.UnifiedPrice)
+                        ])
+                    );
+
+                    const isActiveLine = h.ProductDetailId === currentId;
+
+                    datasets.push({
+                        label: getShopText(shop),
+                        productDetailId: h.ProductDetailId,
+                        data: dateKeys.map(date => valuesByDate.get(date) ?? null),
+                        borderColor: getShopColor(shop, toneIndex, true),
+                        backgroundColor: getShopColor(shop, toneIndex, true),
+                        borderWidth: isActiveLine ? 4 : 2,
+                        pointRadius: isActiveLine ? 4 : 3,
+                        pointHoverRadius: 7,
+                        tension: 0.25,
+                        spanGaps: true,
+                        isActiveLine
+                    });
+
+                    toneIndex++;
+                });
+            });
+
+            chart = new Chart(canvas, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: "nearest",
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: context => {
+                                    const dataset = context.dataset;
+                                    return `${dataset.label}: ${formatNumber(context.parsed.y)} грн`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length === 0) {
+                            return;
+                        }
+
+                        const datasetIndex = elements[0].datasetIndex;
+                        const clickedDataset = chart.data.datasets[datasetIndex];
+
+                        if (!clickedDataset.productDetailId) {
+                            return;
+                        }
+
+                        currentId = clickedDataset.productDetailId;
+                        currentShop = getDetail(currentId).Shop;
+
+                        updateUI();
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: "rgba(0,0,0,0.08)"
+                            },
+                            ticks: {
+                                font: {
+                                    size: 13
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: "rgba(0,0,0,0.08)"
+                            },
+                            ticks: {
+                                font: {
+                                    size: 13
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderLegend() {
+            const container = document.getElementById("chart-legend");
+            container.innerHTML = "";
+
+            allShops.forEach(shopInfo => {
+                const shop = shopInfo.Value;
+                const hasData = model.Chart.some(h => getDetail(h.ProductDetailId).Shop === shop);
+
+                const item = document.createElement("span");
+                item.className = "legend-item";
+
+                const dot = document.createElement("span");
+                dot.className = "legend-dot";
+
+                if (!hasData) {
+                    dot.classList.add("unavailable");
+                } else {
+                    dot.style.backgroundColor = getShopColor(shop, 0, true);
+                }
+
+                const text = document.createElement("span");
+                text.innerText = shopInfo.Text;
+
+                item.appendChild(dot);
+                item.appendChild(text);
+                container.appendChild(item);
+            });
+        }
+
+        document.querySelectorAll("input[name='mode']").forEach(radio => {
+            radio.onchange = e => {
+                currentMode = e.target.value;
+                renderChart();
+                renderLegend();
+            };
+        });
+
+        updateUI();
+    </script>
+}
