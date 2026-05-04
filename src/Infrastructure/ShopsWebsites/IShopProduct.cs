@@ -30,6 +30,7 @@ public interface IShopProduct
         var resLinkProduct = baseUrlProduct + LinkProduct;
         var resLinkImage = baseUrlImage + LinkImage;
         return new(
+            -1,
             resName,
             Price,
             resMeasure,

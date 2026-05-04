@@ -18,63 +18,62 @@
 }
 
 <style>
-    .product-page {
-        max-width: 1440px;
-    }
-
     .product-main-image {
-        width: 100%;
-        height: 420px;
+        height: 360px;
         object-fit: contain;
-        background: #fff;
-    }
-
-    .price-display {
-        font-size: clamp(2.4rem, 5vw, 4.5rem);
-        line-height: 1;
-        font-weight: 600;
-        letter-spacing: -0.04em;
-    }
-
-    .unified-price {
-        font-size: clamp(1.25rem, 2.2vw, 2rem);
-        color: var(--bs-secondary-color);
-        font-weight: 400;
-        letter-spacing: normal;
-    }
-
-    .chart-card {
-        min-height: 420px;
     }
 
     .chart-container {
         position: relative;
-        height: 330px;
+        height: 320px;
     }
 
-    .shop-btn.unavailable {
-        opacity: .45;
-        cursor: not-allowed;
+    .recommendation-image {
+        height: 135px;
+        object-fit: contain;
+        padding: .75rem;
+    }
+
+    /* Professional Price Tag */
+    .price-display {
+        font-size: 3rem;
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+
+    .delta-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .insight-card {
+        background-color: var(--bs-light);
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid rgba(0,0,0,0.05);
     }
 
     .custom-legend {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 1.25rem;
-        margin-top: 1rem;
+        gap: 1rem;
+        margin-top: .75rem;
     }
 
     .legend-item {
         display: inline-flex;
         align-items: center;
-        gap: .45rem;
-        color: var(--bs-secondary-color);
+        gap: .4rem;
     }
 
     .legend-dot {
-        width: .85rem;
-        height: .85rem;
+        width: .75rem;
+        height: .75rem;
         border-radius: 50%;
         display: inline-block;
     }
@@ -84,152 +83,138 @@
         border: 2px dotted var(--bs-secondary-color);
     }
 
-    .recommended-section {
-        margin-top: 3rem;
+    .shop-btn.unavailable {
+        opacity: .5;
+        cursor: not-allowed;
     }
 
     @@media (max-width: 991.98px) {
-        .product-main-image {
-            height: 340px;
-        }
-
-        .chart-container {
-            height: 300px;
-        }
+        .product-main-image { height: 300px; }
+        .chart-container { height: 280px; }
     }
 </style>
 
-<div class="container-fluid product-page py-4">
-
-    <!-- SEARCH -->
-    <form class="row justify-content-center mb-4" method="get">
-        <div class="col-12 col-md-8 col-lg-6">
-            <div class="input-group input-group-lg">
-                <input class="form-control" name="query" placeholder="Type here to search" />
-                <button class="btn btn-primary" type="submit" aria-label="Search">
-                    <i class="bi bi-search"></i>
-                </button>
-            </div>
+<div class="container py-4">
+    <!-- Search Bar -->
+    <form class="mx-auto mb-5" style="max-width: 620px;" method="get">
+        <div class="input-group input-group-lg shadow-sm">
+            <input class="form-control border-end-0" name="query" placeholder="Search for products..." />
+            <button class="btn btn-primary px-4" type="submit">
+                <i class="bi bi-search"></i>
+            </button>
         </div>
     </form>
 
     <div class="row g-4 align-items-start">
-
-        <!-- LEFT: PRODUCT CARD -->
+        <!-- Sidebar: Product Info -->
         <div class="col-12 col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h1 id="product-name" class="h3 mb-0"></h1>
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom-0">
+                    <h1 id="product-name" class="h4 mb-0 fw-bold text-dark"></h1>
                 </div>
+                <div class="card-body d-flex flex-column gap-3">
+                    <div class="rounded-4 bg-light d-flex align-items-center justify-content-center p-3">
+                        <img id="product-image" class="product-main-image img-fluid" alt="" />
+                    </div>
 
-                <div class="card-body">
-                    <img id="product-image" class="product-main-image img-fluid rounded border" alt="" />
-
-                    <div class="d-grid gap-2 mt-3">
-                        <a id="product-link" target="_blank" class="btn btn-outline-primary btn-lg">
-                            Go to shop
+                    <div class="d-grid gap-2">
+                        <a id="product-link" target="_blank" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="bi bi-cart3 me-2"></i>Go to shop
                         </a>
-
-                        <button type="button" class="btn btn-outline-secondary btn-lg">
-                            Add to list
+                        <button type="button" class="btn btn-outline-secondary">
+                            <i class="bi bi-list-check me-2"></i>Add to list
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- CENTER + RIGHT -->
+        <!-- Main Content: Pricing and History -->
         <div class="col-12 col-lg-8">
             <div class="row g-4">
-
-                <!-- PRICE / DETAILS -->
+                
+                <!-- Price Dashboard Card -->
                 <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-
-                            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4">
-
-                                <div>
-                                    <div class="price-display">
-                                        <span id="price"></span>
-                                        <span id="unified-price" class="unified-price"></span>
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                <!-- Left side: Price Analysis -->
+                                <div class="col-12 col-xl-7 border-xl-end">
+                                    <div class="mb-2 text-muted text-uppercase small fw-bold tracking-wider">Current Price</div>
+                                    <div class="d-flex flex-column gap-3 mb-3">
+                                        <span id="price" class="price-display fw-bold text-primary"></span>
+                                        <div id="delta-box">
+                                            <!-- The delta box content will go here, styled as .delta-badge -->
+                                        </div>
                                     </div>
-
-                                    <div id="delta-box" class="mt-3"></div>
-
-                                    <div class="text-muted mt-2">
-                                        Average price in shop:
-                                        <strong id="avg" class="text-body"></strong>
+                                    
+                                    <div class="insight-card">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-secondary small">Average in this shop</span>
+                                            <strong id="avg" class="text-dark"></strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-secondary small">Unified Price</span>
+                                            <span id="unified-price" class="fw-semibold text-dark"></span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div class="controls-panel" style="min-width: 280px;">
-
-                                    <!-- SHOP SELECT -->
+                                <!-- Right side: Configuration -->
+                                <div class="col-12 col-xl-5">
                                     <div class="mb-3">
-                                        <label class="form-label fw-semibold">Shop</label>
-                                        <div id="shop-buttons" class="btn-group w-100" role="group"></div>
+                                        <label class="form-label small fw-bold text-muted">SELECT SHOP</label>
+                                        <div id="shop-buttons" class="btn-group w-100 shadow-sm" role="group"></div>
                                     </div>
 
-                                    <!-- MEASURE -->
                                     <div class="mb-3">
-                                        <label for="measure-select" class="form-label fw-semibold">Amount</label>
-                                        <select id="measure-select" class="form-select form-select-lg"></select>
+                                        <label for="measure-select" class="form-label small fw-bold text-muted">PACKAGE SIZE</label>
+                                        <select id="measure-select" class="form-select border-2"></select>
                                     </div>
 
-                                    <!-- CHART MODE -->
                                     <div>
-                                        <label class="form-label fw-semibold">Chart mode</label>
-
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="mode" id="mode-amount" value="amount" checked />
-                                            <label class="form-check-label" for="mode-amount">
-                                                Per amount
-                                            </label>
-                                        </div>
-
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="mode" id="mode-unified" value="unified" />
-                                            <label class="form-check-label" for="mode-unified">
-                                                Unified price
-                                            </label>
+                                        <label class="form-label small fw-bold text-muted">CHART VIEW</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="mode" id="mode-amount" value="amount" checked>
+                                            <label class="btn btn-outline-secondary" for="mode-amount">Price/Unit</label>
+                                            
+                                            <input type="radio" class="btn-check" name="mode" id="mode-unified" value="unified">
+                                            <label class="btn btn-outline-secondary" for="mode-unified">Unified</label>
                                         </div>
                                     </div>
-
                                 </div>
-
                             </div>
-
                         </div>
                     </div>
                 </div>
 
-                <!-- CHART -->
+                <!-- History Card -->
                 <div class="col-12">
-                    <div class="card chart-card shadow-sm">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                            <h2 class="h5 mb-0">Price history</h2>
-                            <span class="text-muted small">Click a line to select product</span>
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
+                            <h2 class="h5 mb-0 fw-bold text-dark">Price Trends</h2>
+                            <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Tap lines to compare</span>
                         </div>
 
-                        <div class="card-body">
+                        <div class="card-body p-4 pt-0">
                             <div class="chart-container">
                                 <canvas id="chart"></canvas>
                             </div>
-
-                            <div id="chart-legend" class="custom-legend"></div>
+                            <div id="chart-legend" class="custom-legend small text-secondary"></div>
                         </div>
                     </div>
                 </div>
 
             </div>
         </div>
-
     </div>
 
-    <!-- RECOMMENDED -->
-    <div class="recommended-section">
-        <h2 class="h4 mb-3">Recommended products</h2>
+    <!-- Recommendations -->
+    <div class="mt-5">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h2 class="h4 mb-0 fw-bold">Similar Deals</h2>
+            <hr class="flex-grow-1 ms-4 d-none d-md-block opacity-10">
+        </div>
 
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
             @foreach (var pinfo in Model.Recommended)
@@ -269,7 +254,6 @@
             }
         </div>
     </div>
-
 </div>
 
 @section scripts {
@@ -278,6 +262,7 @@
     <script>
         const model = @Html.Raw(json);
         const allShops = @Html.Raw(allShopsJson);
+        const productBasePath = '@Url.Content("~/products/")';
 
         let currentId = model.Details[0].Id;
         let currentShop = model.Details[0].Shop;
@@ -318,6 +303,19 @@
         };
 
         Chart.register(glowPlugin);
+
+
+        function updateBrowserPath(id) {
+            const normalizedBasePath = productBasePath.endsWith("/")
+                ? productBasePath
+                : `${productBasePath}/`;
+
+            const newPath = `${normalizedBasePath}${id}`;
+
+            if (window.location.pathname !== newPath) {
+                window.history.replaceState({ productId: id }, "", newPath);
+            }
+        }
 
         function getDetail(id) {
             return model.Details.find(d => d.Id === id);
@@ -373,6 +371,7 @@
         function updateUI() {
             const d = getDetail(currentId);
             currentShop = d.Shop;
+            updateBrowserPath(currentId);
 
             document.getElementById("product-name").innerText = d.DisplayName;
             document.getElementById("product-image").src = d.LinkImage;

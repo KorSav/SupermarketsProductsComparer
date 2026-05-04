@@ -32,6 +32,7 @@ internal class EfProduct
 
     public CoreProduct ToCoreProduct() =>
         new(
+            Id,
             Name,
             Price,
             new Measure(Amount, Unit),

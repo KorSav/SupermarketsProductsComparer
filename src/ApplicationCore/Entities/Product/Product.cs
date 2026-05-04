@@ -1,6 +1,7 @@
 namespace ApplicationCore.Entities.Product;
 
 public record Product(
+    int Id,
     string Name,
     decimal Price,
     Measure Measure,

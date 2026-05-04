@@ -149,6 +149,7 @@ public sealed class InMemoryProductListService : IProductListService
             new ProductListEntryViewModel(
                 EntryId: Guid.NewGuid(),
                 Product: new Product(
+                    Id: 0,
                     Name: "Молоко Яготинське 2.6%",
                     Price: 42.50m,
                     Measure: new Measure(1m, MeasureUnit.Litre),
@@ -165,6 +166,7 @@ public sealed class InMemoryProductListService : IProductListService
             new ProductListEntryViewModel(
                 EntryId: Guid.NewGuid(),
                 Product: new Product(
+                    Id: 1,
                     Name: "Хліб пшеничний",
                     Price: 28.90m,
                     Measure: new Measure(1m, MeasureUnit.Count),
@@ -181,6 +183,7 @@ public sealed class InMemoryProductListService : IProductListService
             new ProductListEntryViewModel(
                 EntryId: Guid.NewGuid(),
                 Product: new Product(
+                    Id: 2,
                     Name: "Сир кисломолочний",
                     Price: 79.99m,
                     Measure: new Measure(300m, MeasureUnit.Gram),

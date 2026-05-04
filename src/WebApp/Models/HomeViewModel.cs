@@ -18,12 +18,14 @@ public record HomeViewModel(
 
     public record ProductInfo
     {
+        public int ProductId {get;}
         public Product Product { get; }
         public decimal UnifiedPrice { get; }
         public Measure UnifiedMeasure { get; }
 
         public ProductInfo(Product product)
         {
+            ProductId = product.Id;
             Product = product;
             var unified = product.WithUnifiedPrice();
             UnifiedPrice = unified.Price;
