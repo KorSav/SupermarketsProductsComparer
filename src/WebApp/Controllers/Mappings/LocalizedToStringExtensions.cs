@@ -9,9 +9,14 @@ public static class LocalizedToStringExtensions
         unit switch
         {
             MeasureUnit.KiloGram => "кг",
+            MeasureUnit.Gram => "г",
+            MeasureUnit.MiliGram => "мг",
             MeasureUnit.Litre => "л",
             MeasureUnit.MiliLitre => "мл",
             MeasureUnit.Meter => "м",
+            MeasureUnit.MiliMeter => "мм",
+            MeasureUnit.SantiMeter => "см",
+            MeasureUnit.DeciMeter => "дм",
             MeasureUnit.Count => "шт",
             _ => throw new NotImplementedException($"Missing translation for: {unit}"),
         };

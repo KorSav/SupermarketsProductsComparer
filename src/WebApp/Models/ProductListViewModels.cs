@@ -15,3 +15,5 @@ public sealed record ProductListViewModel(IReadOnlyList<ProductListEntryViewMode
 }
 
 public sealed record UpdateProductListEntryAmountRequest(decimal Amount);
+
+public sealed record AddProductListEntryRequest(int ProductId, decimal Amount);

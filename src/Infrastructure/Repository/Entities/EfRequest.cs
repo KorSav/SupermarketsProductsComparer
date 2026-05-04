@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Infrastructure.Repository.Entities;
 
 [Index(nameof(UserId), nameof(SearchString), nameof(SortOrder), nameof(SortBy), IsUnique = true)]
-internal class EfRequest
+public class EfRequest
 {
     public Guid Id { get; set; }
 

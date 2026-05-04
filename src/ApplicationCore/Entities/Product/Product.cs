@@ -26,18 +26,21 @@ public record Product(
     /// </remarks>
     public Product WithUnifiedPrice()
     {
-        var unifiedMeasure = Measure.Dimension switch
+        var unifiedMeasure = UnifiedMeasure(Measure);
+        if (Measure == unifiedMeasure)
+            return this;
+        return WithPricePer(unifiedMeasure);
+    }
+
+    public static Measure UnifiedMeasure(Measure current) =>
+        current.Dimension switch
         {
-            MeasureDim.Mass => MeasureUnit.KiloGram,
-            MeasureDim.Length => MeasureUnit.Meter,
-            MeasureDim.Volume => MeasureUnit.Litre,
-            MeasureDim.Count => MeasureUnit.Count,
+            MeasureDim.Mass => new(1, MeasureUnit.KiloGram),
+            MeasureDim.Length => new(1, MeasureUnit.Meter),
+            MeasureDim.Volume => new(1, MeasureUnit.Litre),
+            MeasureDim.Count => new(1, MeasureUnit.Count),
             _ => throw new NotImplementedException(
-                $"Unified unit for dimension '{Measure.Dimension}' is undefined"
+                $"Unified unit for dimension '{current.Dimension}' is undefined"
             ),
         };
-        if (Measure.Count is 1 && Measure.Unit == unifiedMeasure)
-            return this;
-        return WithPricePer(new Measure(1, unifiedMeasure));
-    }
 }

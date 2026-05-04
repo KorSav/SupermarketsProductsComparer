@@ -5,6 +5,7 @@
 
 @{
     var json = Model.ToJson();
+    var addToListUrl = Url.Action("AddEntry", "ProductList");
 
     var allShopsJson = JsonSerializer.Serialize(
         Enum.GetValues<Shop>()
@@ -96,9 +97,9 @@
 
 <div class="container py-4">
     <!-- Search Bar -->
-    <form class="mx-auto mb-5" style="max-width: 620px;" method="get">
+    <form asp-controller="Products" asp-action="Index" class="mx-auto mb-5" style="max-width: 620px;" method="get">
         <div class="input-group input-group-lg shadow-sm">
-            <input class="form-control border-end-0" name="query" placeholder="Search for products..." />
+            <input class="form-control border-end-0" name="find" placeholder="Search for products..." />
             <button class="btn btn-primary px-4" type="submit">
                 <i class="bi bi-search"></i>
             </button>
@@ -121,7 +122,7 @@
                         <a id="product-link" target="_blank" class="btn btn-primary btn-lg shadow-sm">
                             <i class="bi bi-cart3 me-2"></i>Go to shop
                         </a>
-                        <button type="button" class="btn btn-outline-secondary">
+                        <button id="add-to-list-open-button" type="button" class="btn btn-outline-secondary">
                             <i class="bi bi-list-check me-2"></i>Add to list
                         </button>
                     </div>
@@ -254,6 +255,47 @@
             }
         </div>
     </div>
+
+    @Html.AntiForgeryToken()
+
+    <div class="modal fade" id="add-to-list-modal" tabindex="-1" aria-labelledby="add-to-list-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="add-to-list-title">Add product to list</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="add-to-list-form">
+                        <div class="mb-3">
+                            <label for="add-to-list-amount" class="form-label">Amount</label>
+                            <input
+                                id="add-to-list-amount"
+                                class="form-control"
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                value="1"
+                                required />
+                            <div class="form-text" id="add-to-list-product-name"></div>
+                        </div>
+
+                        <div id="add-to-list-error" class="alert alert-danger py-2 d-none"></div>
+                        <div id="add-to-list-success" class="alert alert-success py-2 d-none"></div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="add-to-list-submit-button" type="submit" form="add-to-list-form" class="btn btn-primary">
+                        Add to list
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 @section scripts {
@@ -263,6 +305,7 @@
         const model = @Html.Raw(json);
         const allShops = @Html.Raw(allShopsJson);
         const productBasePath = '@Url.Content("~/products/")';
+        const addToListUrl = '@addToListUrl';
 
         let currentId = model.Details[0].Id;
         let currentShop = model.Details[0].Shop;
@@ -655,6 +698,86 @@
                 container.appendChild(item);
             });
         }
+
+
+        function getAntiForgeryToken() {
+            return document.querySelector("input[name='__RequestVerificationToken']")?.value;
+        }
+
+        function showAddToListMessage(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.innerText = message;
+            element.classList.remove("d-none");
+        }
+
+        function hideAddToListMessages() {
+            document.getElementById("add-to-list-error").classList.add("d-none");
+            document.getElementById("add-to-list-success").classList.add("d-none");
+        }
+
+        function getAddToListModal() {
+            return bootstrap.Modal.getOrCreateInstance(document.getElementById("add-to-list-modal"));
+        }
+
+        document.getElementById("add-to-list-open-button").onclick = () => {
+            const detail = getDetail(currentId);
+
+            hideAddToListMessages();
+            document.getElementById("add-to-list-amount").value = "1";
+            document.getElementById("add-to-list-product-name").innerText = detail.DisplayName;
+
+            getAddToListModal().show();
+        };
+
+        document.getElementById("add-to-list-form").onsubmit = async e => {
+            e.preventDefault();
+
+            hideAddToListMessages();
+
+            const submitButton = document.getElementById("add-to-list-submit-button");
+            const amount = Number(document.getElementById("add-to-list-amount").value);
+
+            if (!Number.isFinite(amount) || amount <= 0) {
+                showAddToListMessage("add-to-list-error", "Amount must be greater than zero.");
+                return;
+            }
+
+            submitButton.disabled = true;
+
+            try {
+                const response = await fetch(addToListUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": getAntiForgeryToken()
+                    },
+                    body: JSON.stringify({
+                        productId: currentId,
+                        amount
+                    })
+                });
+
+                const result = await response.json().catch(() => null);
+
+                if (!response.ok || result?.success !== true) {
+                    showAddToListMessage(
+                        "add-to-list-error",
+                        result?.message ?? "Product was not added to the list."
+                    );
+                    return;
+                }
+
+                showAddToListMessage("add-to-list-success", "Product was added to the list.");
+
+                window.setTimeout(() => {
+                    getAddToListModal().hide();
+                }, 700);
+            } catch {
+                showAddToListMessage("add-to-list-error", "Request failed. Please try again.");
+            } finally {
+                submitButton.disabled = false;
+            }
+        };
 
         document.querySelectorAll("input[name='mode']").forEach(radio => {
             radio.onchange = e => {

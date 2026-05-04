@@ -1,5 +1,8 @@
 using System.Collections.Concurrent;
 using ApplicationCore.Entities.Product;
+using Infrastructure.Repository;
+using Infrastructure.Repository.Entities;
+using Microsoft.EntityFrameworkCore;
 using WebApp.Models;
 
 namespace WebApp.Services;
@@ -7,6 +10,13 @@ namespace WebApp.Services;
 public interface IProductListService
 {
     Task<ProductListViewModel> GetCurrentAsync(Guid userId, CancellationToken cancellationToken);
+
+    Task<ProductListViewModel> AddEntryAsync(
+        Guid userId,
+        int productId,
+        decimal amount,
+        CancellationToken cancellationToken
+    );
 
     Task<ProductListViewModel> RemoveEntryAsync(
         Guid userId,
@@ -29,10 +39,15 @@ public sealed class InMemoryProductListService : IProductListService
     private readonly InMemoryPurchaseStore _purchaseStore;
 
     private readonly ConcurrentDictionary<Guid, List<ProductListEntryViewModel>> _lists = new();
+    private readonly IServiceProvider _serviceProvider;
 
-    public InMemoryProductListService(InMemoryPurchaseStore purchaseStore)
+    public InMemoryProductListService(
+        InMemoryPurchaseStore purchaseStore,
+        IServiceProvider serviceProvider
+    )
     {
         _purchaseStore = purchaseStore;
+        _serviceProvider = serviceProvider;
     }
 
     public Task<ProductListViewModel> GetCurrentAsync(
@@ -45,6 +60,62 @@ public sealed class InMemoryProductListService : IProductListService
         ProductListViewModel model = new(entries.ToList());
 
         return Task.FromResult(model);
+    }
+
+    public async Task<ProductListViewModel> AddEntryAsync(
+        Guid userId,
+        int productId,
+        decimal amount,
+        CancellationToken cancellationToken
+    )
+    {
+        if (amount <= 0)
+            throw new ArgumentOutOfRangeException(
+                nameof(amount),
+                "Amount must be greater than zero."
+            );
+
+        EfProduct? efProduct = null;
+        await using (var scope = _serviceProvider.CreateAsyncScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            efProduct = await dbContext
+                .Products.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == productId, cancellationToken);
+        }
+
+        if (efProduct is null)
+            throw new KeyNotFoundException("Product was not found.");
+
+        Product product = efProduct.ToCoreProduct();
+        List<ProductListEntryViewModel> entries = GetOrCreateUserList(userId);
+
+        lock (entries)
+        {
+            int existingIndex = entries.FindIndex(x => x.Product.Id == productId);
+
+            if (existingIndex >= 0)
+            {
+                ProductListEntryViewModel existingEntry = entries[existingIndex];
+                entries[existingIndex] = existingEntry with
+                {
+                    Product = product,
+                    Amount = existingEntry.Amount + amount,
+                };
+            }
+            else
+            {
+                entries.Add(
+                    new ProductListEntryViewModel(
+                        EntryId: Guid.NewGuid(),
+                        Product: product,
+                        Amount: amount
+                    )
+                );
+            }
+
+            return new ProductListViewModel(entries.ToList());
+        }
     }
 
     public Task<ProductListViewModel> RemoveEntryAsync(

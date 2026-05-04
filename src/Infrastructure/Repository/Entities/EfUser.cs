@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Infrastructure.Repository.Entities;
 
 [Index(nameof(Name), nameof(Surname), IsUnique = true)]
-internal class EfUser
+public class EfUser
 {
     public Guid Id { get; set; }
 

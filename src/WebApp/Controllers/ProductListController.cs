@@ -25,6 +25,60 @@ public sealed class ProductListController(IProductListService productListService
         return View(model);
     }
 
+    [HttpPost("entries")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddEntry(
+        [FromBody] AddProductListEntryRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        if (request.ProductId <= 0)
+        {
+            return BadRequest(
+                new { success = false, message = "Product id must be greater than zero." }
+            );
+        }
+
+        if (request.Amount <= 0)
+        {
+            return BadRequest(
+                new { success = false, message = "Amount must be greater than zero." }
+            );
+        }
+
+        Guid userId = GetUserId();
+
+        try
+        {
+            ProductListViewModel updatedModel = await _productListService.AddEntryAsync(
+                userId,
+                request.ProductId,
+                request.Amount,
+                cancellationToken
+            );
+
+            ProductListEntryViewModel? addedEntry = updatedModel.Entries.FirstOrDefault(x =>
+                x.Product.Id == request.ProductId
+            );
+
+            return Ok(
+                new
+                {
+                    success = true,
+                    entryId = addedEntry?.EntryId,
+                    entryTotal = addedEntry?.TotalPrice ?? 0,
+                    listTotal = updatedModel.TotalPrice,
+                    entriesCount = updatedModel.Entries.Count,
+                    isEmpty = updatedModel.IsEmpty,
+                }
+            );
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { success = false, message = "Product was not found." });
+        }
+    }
+
     [HttpPatch("entries/{entryId:guid}/amount")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateAmount(
