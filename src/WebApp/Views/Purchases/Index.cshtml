@@ -1,0 +1,281 @@
+@using ApplicationCore.Entities.Request
+@using WebApp.Models
+@model WebApp.Models.PurchasesViewModel
+
+@{
+    ViewData["Title"] = "Purchases";
+
+    int currentPage = Model.Query.Page;
+    int previousPage = currentPage - 1;
+    int nextPage = currentPage + 1;
+
+    string FormatDateInput(DateOnly? date)
+    {
+        return date?.ToString("yyyy-MM-dd") ?? "";
+    }
+
+    string FormatMoney(decimal value)
+    {
+        return value.ToString("0.00");
+    }
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Purchases</h1>
+        <p class="text-muted mb-0">
+            Saved purchase receipts from your product lists.
+        </p>
+    </div>
+
+    <div class="text-md-end">
+        <div class="text-muted small">Found purchases</div>
+        <div class="h4 mb-0">@Model.TotalCount</div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<div id="purchasesAlert" class="alert d-none" role="alert"></div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <div class="fw-semibold">
+            <i class="bi bi-funnel"></i>
+            Filters and sorting
+        </div>
+    </div>
+
+    <div class="card-body">
+        <form asp-controller="Purchases" asp-action="Index" method="get" class="row g-3">
+
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="dateFrom">Date from</label>
+                <input id="dateFrom" name="DateFrom" type="date" class="form-control"
+                       value="@FormatDateInput(Model.Query.DateFrom)" />
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="dateTo">Date to</label>
+                <input id="dateTo" name="DateTo" type="date" class="form-control"
+                       value="@FormatDateInput(Model.Query.DateTo)" />
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="minTotal">Min total</label>
+                <input id="minTotal" name="MinTotal" type="number" step="0.01" min="0" class="form-control"
+                       value="@Model.Query.MinTotal?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="maxTotal">Max total</label>
+                <input id="maxTotal" name="MaxTotal" type="number" step="0.01" min="0" class="form-control"
+                       value="@Model.Query.MaxTotal?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="sortBy">Sort by</label>
+                <select id="sortBy" name="SortBy" class="form-select" asp-for="Query.SortBy"
+                        asp-items="Html.GetEnumSelectList<PurchaseSortBy>()">
+                </select>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="sortOrder">Order</label>
+                <select id="sortOrder" name="SortOrder" class="form-select" asp-for="Query.SortOrder"
+                        asp-items="Html.GetEnumSelectList<SortOrder>()">
+                </select>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="pageSize">Page size</label>
+                <select id="pageSize" name="PageSize" class="form-select">
+                    @foreach (int size in new[] { 5, 10, 20, 50, 100 })
+                    {
+                        if (Model.Query.PageSize == size)
+                        {
+                            <option value="@size" selected>@size</option>
+                        }
+                        else
+                        {
+                            <option value="@size">@size</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <input type="hidden" name="Page" value="1" />
+
+            <div class="col-12 col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i>
+                    Apply
+                </button>
+
+                <a asp-controller="Purchases" asp-action="Index" class="btn btn-outline-secondary">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.IsEmpty)
+{
+    <div id="emptyPurchasesState" class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-receipt display-5 text-muted"></i>
+            <h2 class="h5 mt-3">No purchases found</h2>
+            <p class="text-muted mb-0">
+                Save your current product list as a purchase to see it here.
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    <div id="purchasesList" class="d-flex flex-column gap-3">
+        @foreach (var purchase in Model.Items)
+        {
+            string collapseId = $"receipt-{purchase.Id:N}";
+
+            <div class="card border-0 shadow-sm purchase-card" data-purchase-id="@purchase.Id">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h2 class="h5 mb-0">
+                                    Purchase from @purchase.Date.ToString("dd.MM.yyyy HH:mm")
+                                </h2>
+
+                                <span class="badge text-bg-light border">
+                                    @purchase.Receipt.Count item(s)
+                                </span>
+                            </div>
+
+                            <div class="text-muted small">
+                                Id: @purchase.Id
+                            </div>
+                        </div>
+
+                        <div class="text-lg-end">
+                            <div class="text-muted small">Total spent</div>
+                            <div class="h4 mb-0">
+                                @FormatMoney(purchase.Total) грн
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row gap-2 mt-3">
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId">
+                            <i class="bi bi-list-ul"></i>
+                            Show receipt
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger remove-purchase-btn" type="button">
+                            <i class="bi bi-trash"></i>
+                            Remove purchase
+                        </button>
+                    </div>
+
+                    <div class="collapse mt-3" id="@collapseId">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Shop</th>
+                                        <th>Measure</th>
+                                        <th class="text-end">Spent</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach (var entry in purchase.Receipt)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">
+                                                @entry.ProductName
+                                            </td>
+
+                                            <td>
+                                                <span class="badge text-bg-secondary">
+                                                    @entry.Shop
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                @entry.Measure.Count.ToString("0.###")
+                                                @entry.Measure.Unit
+                                            </td>
+
+                                            <td class="text-end">
+                                                @FormatMoney(entry.SpentAmount) грн
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3" class="text-end">
+                                            Receipt total
+                                        </th>
+                                        <th class="text-end">
+                                            @FormatMoney(purchase.Total) грн
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-4" aria-label="Purchases pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-controller="Purchases" asp-action="Index"
+                           asp-route-DateFrom="@Model.Query.DateFrom" asp-route-DateTo="@Model.Query.DateTo"
+                           asp-route-MinTotal="@Model.Query.MinTotal" asp-route-MaxTotal="@Model.Query.MaxTotal"
+                           asp-route-SortBy="@Model.Query.SortBy" asp-route-SortOrder="@Model.Query.SortOrder"
+                           asp-route-PageSize="@Model.Query.PageSize" asp-route-Page="@previousPage">
+                        Previous
+                    </a>
+                </li>
+
+                @for (int pageNum = 1; pageNum <= Model.TotalPages; pageNum++)
+                {
+                    <li class="page-item @(pageNum == currentPage ? "active" : "")">
+                        <a class="page-link" asp-controller="Purchases" asp-action="Index"
+                               asp-route-DateFrom="@Model.Query.DateFrom" asp-route-DateTo="@Model.Query.DateTo"
+                               asp-route-MinTotal="@Model.Query.MinTotal" asp-route-MaxTotal="@Model.Query.MaxTotal"
+                               asp-route-SortBy="@Model.Query.SortBy" asp-route-SortOrder="@Model.Query.SortOrder"
+                               asp-route-PageSize="@Model.Query.PageSize" asp-route-Page="@pageNum">
+                            @pageNum
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(currentPage >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-controller="Purchases" asp-action="Index"
+                           asp-route-DateFrom="@Model.Query.DateFrom" asp-route-DateTo="@Model.Query.DateTo"
+                           asp-route-MinTotal="@Model.Query.MinTotal" asp-route-MaxTotal="@Model.Query.MaxTotal"
+                           asp-route-SortBy="@Model.Query.SortBy" asp-route-SortOrder="@Model.Query.SortOrder"
+                           asp-route-PageSize="@Model.Query.PageSize" asp-route-Page="@nextPage">
+                        Next
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@section Scripts {
+    <script src="~/js/purchases.js" asp-append-version="true"></script>
+}

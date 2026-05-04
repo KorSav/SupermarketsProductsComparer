@@ -2,7 +2,6 @@ using ApplicationCore.Entities.Product;
 using ApplicationCore.Entities.Request;
 using ApplicationCore.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using WebApp.Models;
 using static WebApp.Models.ProductViewModel;
 

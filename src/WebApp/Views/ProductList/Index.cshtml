@@ -1,0 +1,166 @@
+@model WebApp.Models.ProductListViewModel
+
+@{
+    ViewData["Title"] = "Current product list";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Current product list</h1>
+        <p class="text-muted mb-0">
+            Products you marked as planned for purchase.
+        </p>
+    </div>
+
+    <div class="text-md-end">
+        <div class="text-muted small">Estimated total</div>
+        <div class="h4 mb-0">
+            <span id="productListTotal">@Model.TotalPrice.ToString("0.00")</span> грн
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<div id="productListAlert" class="alert d-none" role="alert"></div>
+
+@if (Model.IsEmpty)
+{
+    <div id="emptyProductListState" class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-basket display-5 text-muted"></i>
+            <h2 class="h5 mt-3">Your product list is empty</h2>
+            <p class="text-muted mb-0">
+                Add products from search results to prepare a purchase list.
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    <div id="productListContent">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 96px;">Product</th>
+                                <th>Name</th>
+                                <th>Shop</th>
+                                <th>Product measure</th>
+                                <th class="text-end">Website price</th>
+                                <th style="width: 170px;">Amount to buy</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-end" style="width: 150px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productListTableBody">
+                            @foreach (var entry in Model.Entries)
+                            {
+                                <tr data-entry-id="@entry.EntryId">
+                                    <td>
+                                        <img src="@entry.Product.LinkImage"
+                                             alt="@entry.Product.Name"
+                                             class="rounded border object-fit-cover"
+                                             style="width: 72px; height: 56px;" />
+                                    </td>
+
+                                    <td>
+                                        <div class="fw-semibold">@entry.Product.Name</div>
+                                        <a href="@entry.Product.LinkProduct"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="small text-decoration-none">
+                                            Open product page
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+                                    </td>
+
+                                    <td>
+                                        <span class="fw-normal fs-5">
+                                            @entry.Product.Shop
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <span>
+                                            @entry.Product.Measure.Count.ToString("0.###")
+                                            @entry.Product.Measure.Unit
+                                        </span>
+                                    </td>
+
+                                    <td class="text-end">
+                                        <span class="fw-semibold">
+                                            @entry.Product.Price.ToString("0.00")
+                                        </span>
+                                        грн
+                                    </td>
+
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number"
+                                                   class="form-control product-amount-input"
+                                                   value="@entry.Amount.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)"
+                                                   min="0.001"
+                                                   step="0.001"
+                                                   inputmode="decimal"
+                                                   aria-label="Amount to buy" />
+
+                                            <button type="button"
+                                                    class="btn btn-outline-primary update-entry-amount-btn">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+
+                                    <td class="text-end">
+                                        <span class="fw-semibold entry-total">
+                                            @entry.TotalPrice.ToString("0.00")
+                                        </span>
+                                        грн
+                                    </td>
+
+                                    <td class="text-end">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger remove-entry-btn">
+                                            <i class="bi bi-trash"></i>
+                                            Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mt-4">
+            <div class="text-muted small">
+                Changing the amount affects only your planned purchase list, not the product data from the shop.
+            </div>
+
+            <button type="button"
+                    id="storeProductListBtn"
+                    class="btn btn-success">
+                <i class="bi bi-receipt"></i>
+                Save as purchase
+            </button>
+        </div>
+    </div>
+
+    <div id="emptyProductListState" class="card border-0 shadow-sm d-none">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-basket display-5 text-muted"></i>
+            <h2 class="h5 mt-3">Your product list is empty</h2>
+            <p class="text-muted mb-0">
+                Add products from search results to prepare a purchase list.
+            </p>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/product-list.js" asp-append-version="true"></script>
+}
