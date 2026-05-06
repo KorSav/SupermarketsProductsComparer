@@ -25,13 +25,14 @@ public interface IShopProduct
         var baseUrlImage =
             configuration.GetSection($"ShopDataRetrievers:{Shop}:ImageUrl").Get<string?>()
             ?? string.Empty;
-        var resName = Name + ", " + Ratio;
+        var resNameSufix = ", " + Ratio;
         var resMeasure = RatioParser.Parse(Ratio);
         var resLinkProduct = baseUrlProduct + LinkProduct;
         var resLinkImage = baseUrlImage + LinkImage;
         return new(
-            -1,
-            resName,
+            Guid.Empty,
+            Name,
+            resNameSufix,
             Price,
             resMeasure,
             new Uri(resLinkProduct),

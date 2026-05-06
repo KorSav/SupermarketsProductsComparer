@@ -13,7 +13,7 @@ public interface IProductListService
 
     Task<ProductListViewModel> AddEntryAsync(
         Guid userId,
-        int productId,
+        Guid productId,
         decimal amount,
         CancellationToken cancellationToken
     );
@@ -64,7 +64,7 @@ public sealed class InMemoryProductListService : IProductListService
 
     public async Task<ProductListViewModel> AddEntryAsync(
         Guid userId,
-        int productId,
+        Guid productId,
         decimal amount,
         CancellationToken cancellationToken
     )
@@ -80,7 +80,7 @@ public sealed class InMemoryProductListService : IProductListService
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             efProduct = await dbContext
-                .Products.AsNoTracking()
+                .Products.Include(p => p.PriceHistory)
                 .FirstOrDefaultAsync(x => x.Id == productId, cancellationToken);
         }
 
@@ -210,7 +210,7 @@ public sealed class InMemoryProductListService : IProductListService
 
     private List<ProductListEntryViewModel> GetOrCreateUserList(Guid userId)
     {
-        return _lists.GetOrAdd(userId, _ => CreateSeedList());
+        return _lists.GetOrAdd(userId, _ => []);
     }
 
     private static List<ProductListEntryViewModel> CreateSeedList()
@@ -220,8 +220,9 @@ public sealed class InMemoryProductListService : IProductListService
             new ProductListEntryViewModel(
                 EntryId: Guid.NewGuid(),
                 Product: new Product(
-                    Id: 0,
+                    Id: Guid.NewGuid(),
                     Name: "Молоко Яготинське 2.6%",
+                    NameSuffix: ", 1 L",
                     Price: 42.50m,
                     Measure: new Measure(1m, MeasureUnit.Litre),
                     LinkProduct: new Uri(
@@ -237,8 +238,9 @@ public sealed class InMemoryProductListService : IProductListService
             new ProductListEntryViewModel(
                 EntryId: Guid.NewGuid(),
                 Product: new Product(
-                    Id: 1,
+                    Id: Guid.NewGuid(),
                     Name: "Хліб пшеничний",
+                    NameSuffix: ", 1 pc",
                     Price: 28.90m,
                     Measure: new Measure(1m, MeasureUnit.Count),
                     LinkProduct: new Uri(
@@ -254,8 +256,9 @@ public sealed class InMemoryProductListService : IProductListService
             new ProductListEntryViewModel(
                 EntryId: Guid.NewGuid(),
                 Product: new Product(
-                    Id: 2,
+                    Id: Guid.NewGuid(),
                     Name: "Сир кисломолочний",
+                    NameSuffix: ", 300 g",
                     Price: 79.99m,
                     Measure: new Measure(300m, MeasureUnit.Gram),
                     LinkProduct: new Uri(

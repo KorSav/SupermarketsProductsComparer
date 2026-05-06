@@ -6,6 +6,8 @@ namespace Infrastructure.Repository;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<EfProduct> Products { get; set; }
+    public DbSet<EfProductGroup> ProductGroups { get; set; }
+    public DbSet<EfPriceHistory> PriceHistories { get; set; }
     public DbSet<EfRequest> Requests { get; set; }
     public DbSet<EfUser> Users { get; set; }
 

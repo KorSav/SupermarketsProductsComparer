@@ -43,55 +43,87 @@ public class ProductsController(ProductService productService, AppDbContext dbCo
         return View(new HomeViewModel(authnGetResult.Products, request, isOptionChosen));
     }
 
-    [HttpGet("[controller]/{id:int}")]
-    public async Task<IActionResult> ProductDetails(int id, CancellationToken ct)
+    [HttpGet("[controller]/{id:guid}")]
+    public async Task<IActionResult> ProductDetails(Guid id, CancellationToken ct)
     {
-        var efProduct = await dbContext
+        var requestedProduct = await dbContext
             .Products.AsNoTracking()
+            .Include(p => p.PriceHistory)
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
-        if (efProduct is null)
+        if (requestedProduct is null)
             return NotFound();
 
-        var product = efProduct.ToCoreProduct();
-        var unifiedProduct = product.WithUnifiedPrice();
-        var priceHistory = GenerateMockPriceHistory(product.Id, product.Price, product.Measure);
-        decimal averagePrice = priceHistory.History.Average(e => e.Price);
+        var efProductsFromSameGroup = await dbContext
+            .Products.AsNoTracking()
+            .Include(p => p.PriceHistory)
+            .Where(p => p.ProductGroupId == requestedProduct.ProductGroupId)
+            .ToListAsync(ct);
 
-        var details = new List<ProductDetail>
+        var productDetails = new List<ProductDetail>();
+        var priceHistories = new List<PriceHistory>();
+
+        foreach (
+            var efProduct in efProductsFromSameGroup
+                .OrderByDescending(p => p.Id == id)
+                .ThenBy(p => p.Shop)
+                .ThenBy(p => p.Amount)
+                .ThenBy(p => p.Unit)
+        )
         {
-            new(
-                efProduct.Id,
-                efProduct.Name,
-                efProduct.Shop,
-                efProduct.FullLinkImage,
-                efProduct.FullLinkProduct,
-                efProduct.Price,
-                UnifiedPrice: unifiedProduct.Price,
-                AveragePrice: averagePrice,
-                UnifiedMeasure: unifiedProduct.Measure,
-                Measure: new Measure(efProduct.Amount, efProduct.Unit)
-            ),
-        };
+            var product = efProduct.ToCoreProduct();
+            var unifiedProduct = product.WithUnifiedPrice();
+
+            var mockPriceHistory = GenerateMockPriceHistory(
+                product.Id,
+                product.Price,
+                product.Measure
+            );
+
+            var averagePrice = mockPriceHistory.History.Average(e => e.Price);
+
+            productDetails.Add(
+                new ProductDetail(
+                    efProduct.Id,
+                    product.DisplayName,
+                    efProduct.Shop,
+                    efProduct.FullLinkImage,
+                    efProduct.FullLinkProduct,
+                    product.Price,
+                    UnifiedPrice: unifiedProduct.Price,
+                    AveragePrice: averagePrice,
+                    UnifiedMeasure: unifiedProduct.Measure,
+                    Measure: new Measure(efProduct.Amount, efProduct.Unit)
+                )
+            );
+
+            priceHistories.Add(mockPriceHistory);
+        }
+
+        var requestedCoreProduct = requestedProduct.ToCoreProduct();
 
         var recommended = await productService.GetProductsAsync(
-            new(efProduct.Name, SortBy.Name, SortOrder.Asc),
+            new(requestedCoreProduct.Name, SortBy.Name, SortOrder.Asc),
             0,
             8,
             ct
         );
 
+        var filterGroupName = requestedCoreProduct.NormalizedName;
         ProductViewModel model = new(
-            details,
-            [priceHistory],
-            recommended.Select(p => new HomeViewModel.ProductInfo(p)).ToList()
+            productDetails,
+            priceHistories,
+            recommended
+                .Where(p => p.NormalizedName != filterGroupName)
+                .Select(p => new HomeViewModel.ProductInfo(p))
+                .ToList()
         );
 
         return View(model);
     }
 
     private static PriceHistory GenerateMockPriceHistory(
-        int productId,
+        Guid productId,
         decimal currentPrice,
         Measure measure
     )

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260502121041_InitialCreate")]
+    [Migration("20260505181219_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -25,13 +25,43 @@ namespace Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProduct", b =>
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfPriceHistory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid?>("EfProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ParsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("UnifiedPrice")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EfProductId");
+
+                    b.ToTable("PriceHistories");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProduct", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(10, 4)
@@ -49,17 +79,16 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<decimal>("Price")
-                        .HasPrecision(8, 2)
-                        .HasColumnType("numeric(8,2)");
+                    b.Property<string>("NameSuffix")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ProductGroupId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Shop")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<decimal>("UnifiedPrice")
-                        .HasPrecision(8, 2)
-                        .HasColumnType("numeric(8,2)");
 
                     b.Property<string>("Unit")
                         .IsRequired()
@@ -67,10 +96,30 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name", "Shop")
+                    b.HasIndex("Name", "Shop", "Amount", "Unit")
                         .IsUnique();
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProductGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("ProductGroups");
                 });
 
             modelBuilder.Entity("Infrastructure.Repository.Entities.EfRequest", b =>
@@ -126,6 +175,18 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfPriceHistory", b =>
+                {
+                    b.HasOne("Infrastructure.Repository.Entities.EfProduct", null)
+                        .WithMany("PriceHistory")
+                        .HasForeignKey("EfProductId");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProduct", b =>
+                {
+                    b.Navigation("PriceHistory");
                 });
 #pragma warning restore 612, 618
         }

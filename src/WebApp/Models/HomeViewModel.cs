@@ -18,7 +18,7 @@ public record HomeViewModel(
 
     public record ProductInfo
     {
-        public int ProductId { get; }
+        public Guid ProductId { get; }
         public Product Product { get; }
         public decimal UnifiedPrice { get; }
         public Measure UnifiedMeasure { get; }

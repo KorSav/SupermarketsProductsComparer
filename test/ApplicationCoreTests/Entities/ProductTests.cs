@@ -39,4 +39,34 @@ public class ProductTests
             (new(7, Unit.Count), new(56, Unit.Count), 8),
             (new(24, Unit.Count), new(6, Unit.Count), 0.25m),
         ];
+
+    [Theory]
+    [MemberData(nameof(NormalizeNameData))]
+    public void NormalizeName_ReturnsExpectedName(string raw, string exp)
+    {
+        Assert.Equal(exp, Product.NormalizeName(raw));
+    }
+
+    public static IEnumerable<TheoryDataRow<string, string>> NormalizeNameData() =>
+        [
+            (
+                "Масло солодковершкове «Молокія» екстра 82%",
+                "масло солодковершкове молокія екстра 82%"
+            ),
+            (
+                "Напій Coca-Cola безалкогольний сильногазований",
+                "напій coca cola безалкогольний сильногазований"
+            ),
+            ("Сир «Премія»® Сулугуні 45%", "сир премія сулугуні 45%"),
+            (
+                "Батарейки лужні Euroelectric АА 1.5V LR6 4 шт./уп.",
+                "батарейки лужні euroelectric lr6"
+            ),
+            (
+                "Торт Nonpareil Київський Ф'южн з журавлиною",
+                "торт nonpareil київський южн журавлиною"
+            ),
+            ("Креветка королівська в панцирі 40/80 с/м", "креветка королівська панцирі"),
+            ("Морозиво «Ласунка» «Малюк-Ам» пломбір 15%", "морозиво ласунка малюк пломбір 15%"),
+        ];
 }

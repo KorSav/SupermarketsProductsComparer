@@ -32,11 +32,9 @@ public sealed class ProductListController(IProductListService productListService
         CancellationToken cancellationToken
     )
     {
-        if (request.ProductId <= 0)
+        if (request.ProductId == Guid.Empty)
         {
-            return BadRequest(
-                new { success = false, message = "Product id must be greater than zero." }
-            );
+            return BadRequest(new { success = false, message = "Product id can't be empty guid." });
         }
 
         if (request.Amount <= 0)

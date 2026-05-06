@@ -6,6 +6,7 @@
 @{
     var json = Model.ToJson();
     var addToListUrl = Url.Action("AddEntry", "ProductList");
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
 
     var allShopsJson = JsonSerializer.Serialize(
         Enum.GetValues<Shop>()
@@ -35,7 +36,7 @@
         padding: .75rem;
     }
 
-    /* Professional Price Tag */
+    /* Блок ціни */
     .price-display {
         font-size: 3rem;
         line-height: 1;
@@ -96,10 +97,10 @@
 </style>
 
 <div class="container py-4">
-    <!-- Search Bar -->
+    <!-- Пошук -->
     <form asp-controller="Products" asp-action="Index" class="mx-auto mb-5" style="max-width: 620px;" method="get">
         <div class="input-group input-group-lg shadow-sm">
-            <input class="form-control border-end-0" name="find" placeholder="Search for products..." />
+            <input class="form-control border-end-0" name="find" placeholder="Пошук товарів..." />
             <button class="btn btn-primary px-4" type="submit">
                 <i class="bi bi-search"></i>
             </button>
@@ -107,7 +108,7 @@
     </form>
 
     <div class="row g-4 align-items-start">
-        <!-- Sidebar: Product Info -->
+        <!-- Основна інформація про товар -->
         <div class="col-12 col-lg-4">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white py-3 border-bottom-0">
@@ -120,67 +121,70 @@
 
                     <div class="d-grid gap-2">
                         <a id="product-link" target="_blank" class="btn btn-primary btn-lg shadow-sm">
-                            <i class="bi bi-cart3 me-2"></i>Go to shop
+                            <i class="bi bi-cart3 me-2"></i>Перейти до магазину
                         </a>
-                        <button id="add-to-list-open-button" type="button" class="btn btn-outline-secondary">
-                            <i class="bi bi-list-check me-2"></i>Add to list
-                        </button>
+                        @if (isAuthenticated)
+                        {
+                            <button id="add-to-list-open-button" type="button" class="btn btn-outline-secondary">
+                                <i class="bi bi-list-check me-2"></i>Додати до списку
+                            </button>
+                        }
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Main Content: Pricing and History -->
+        <!-- Ціна та історія -->
         <div class="col-12 col-lg-8">
             <div class="row g-4">
                 
-                <!-- Price Dashboard Card -->
+                <!-- Блок ціни -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0">
                         <div class="card-body p-4">
                             <div class="row g-4">
-                                <!-- Left side: Price Analysis -->
+                                <!-- Аналіз ціни -->
                                 <div class="col-12 col-xl-7 border-xl-end">
-                                    <div class="mb-2 text-muted text-uppercase small fw-bold tracking-wider">Current Price</div>
+                                    <div class="mb-2 text-muted text-uppercase small fw-bold tracking-wider">Поточна ціна</div>
                                     <div class="d-flex flex-column gap-3 mb-3">
                                         <span id="price" class="price-display fw-bold text-primary"></span>
                                         <div id="delta-box">
-                                            <!-- The delta box content will go here, styled as .delta-badge -->
+                                            <!-- Тут відображається порівняння з середньою ціною -->
                                         </div>
                                     </div>
                                     
                                     <div class="insight-card">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="text-secondary small">Average in this shop</span>
+                                            <span class="text-secondary small">Середня ціна в цьому магазині</span>
                                             <strong id="avg" class="text-dark"></strong>
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <span class="text-secondary small">Unified Price</span>
+                                            <span class="text-secondary small">Зведена ціна</span>
                                             <span id="unified-price" class="fw-semibold text-dark"></span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Right side: Configuration -->
+                                <!-- Налаштування -->
                                 <div class="col-12 col-xl-5">
                                     <div class="mb-3">
-                                        <label class="form-label small fw-bold text-muted">SELECT SHOP</label>
+                                        <label class="form-label small fw-bold text-muted">ОБЕРІТЬ МАГАЗИН</label>
                                         <div id="shop-buttons" class="btn-group w-100 shadow-sm" role="group"></div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label for="measure-select" class="form-label small fw-bold text-muted">PACKAGE SIZE</label>
+                                        <label for="measure-select" class="form-label small fw-bold text-muted">РОЗМІР УПАКОВКИ</label>
                                         <select id="measure-select" class="form-select border-2"></select>
                                     </div>
 
                                     <div>
-                                        <label class="form-label small fw-bold text-muted">CHART VIEW</label>
+                                        <label class="form-label small fw-bold text-muted">ТИП ГРАФІКА</label>
                                         <div class="btn-group w-100" role="group">
                                             <input type="radio" class="btn-check" name="mode" id="mode-amount" value="amount" checked>
-                                            <label class="btn btn-outline-secondary" for="mode-amount">Price/Unit</label>
+                                            <label class="btn btn-outline-secondary" for="mode-amount">Ціна за упаковку</label>
                                             
                                             <input type="radio" class="btn-check" name="mode" id="mode-unified" value="unified">
-                                            <label class="btn btn-outline-secondary" for="mode-unified">Unified</label>
+                                            <label class="btn btn-outline-secondary" for="mode-unified">Зведена ціна</label>
                                         </div>
                                     </div>
                                 </div>
@@ -189,12 +193,12 @@
                     </div>
                 </div>
 
-                <!-- History Card -->
+                <!-- Історія цін -->
                 <div class="col-12">
                     <div class="card shadow-sm border-0">
                         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
-                            <h2 class="h5 mb-0 fw-bold text-dark">Price Trends</h2>
-                            <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Tap lines to compare</span>
+                            <h2 class="h5 mb-0 fw-bold text-dark">Динаміка цін</h2>
+                            <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Натисніть на лінію для деталей</span>
                         </div>
 
                         <div class="card-body p-4 pt-0">
@@ -210,17 +214,25 @@
         </div>
     </div>
 
-    <!-- Recommendations -->
+    <!-- Схожі пропозиції -->
     <div class="mt-5">
         <div class="d-flex align-items-center justify-content-between mb-4">
-            <h2 class="h4 mb-0 fw-bold">Similar Deals</h2>
+            <h2 class="h4 mb-0 fw-bold">Схожі пропозиції</h2>
             <hr class="flex-grow-1 ms-4 d-none d-md-block opacity-10">
         </div>
 
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-            @foreach (var pinfo in Model.Recommended)
-            {
-                <div class="col">
+        @if (!Model.Recommended.Any())
+        {
+            <div class="alert alert-secondary mb-0" role="alert">
+                Схожих пропозицій немає, можливо вони з'являться пізніше.
+            </div>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                @foreach (var pinfo in Model.Recommended)
+                {
+                    <div class="col">
                     <div class="card h-100 shadow-sm">
                         <img src="@pinfo.Product.LinkImage" class="card-img-top p-3" alt="@pinfo.Product.Name"
                              style="height: 220px; object-fit: contain;">
@@ -252,49 +264,53 @@
                         </div>
                     </div>
                 </div>
-            }
-        </div>
+                }
+            </div>
+        }
     </div>
 
-    @Html.AntiForgeryToken()
+    @if (isAuthenticated)
+    {
+        @Html.AntiForgeryToken()
 
-    <div class="modal fade" id="add-to-list-modal" tabindex="-1" aria-labelledby="add-to-list-title" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 class="modal-title fs-5" id="add-to-list-title">Add product to list</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+        <div class="modal fade" id="add-to-list-modal" tabindex="-1" aria-labelledby="add-to-list-title" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="add-to-list-title">Додати товар до списку</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрити"></button>
+                    </div>
 
-                <div class="modal-body">
-                    <form id="add-to-list-form">
-                        <div class="mb-3">
-                            <label for="add-to-list-amount" class="form-label">Amount</label>
-                            <input
-                                id="add-to-list-amount"
-                                class="form-control"
-                                type="number"
-                                min="0.01"
-                                step="0.01"
-                                value="1"
-                                required />
-                            <div class="form-text" id="add-to-list-product-name"></div>
-                        </div>
+                    <div class="modal-body">
+                        <form id="add-to-list-form">
+                            <div class="mb-3">
+                                <label for="add-to-list-amount" class="form-label">Кількість</label>
+                                <input
+                                    id="add-to-list-amount"
+                                    class="form-control"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    value="1"
+                                    required />
+                                <div class="form-text" id="add-to-list-product-name"></div>
+                            </div>
 
-                        <div id="add-to-list-error" class="alert alert-danger py-2 d-none"></div>
-                        <div id="add-to-list-success" class="alert alert-success py-2 d-none"></div>
-                    </form>
-                </div>
+                            <div id="add-to-list-error" class="alert alert-danger py-2 d-none"></div>
+                            <div id="add-to-list-success" class="alert alert-success py-2 d-none"></div>
+                        </form>
+                    </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button id="add-to-list-submit-button" type="submit" form="add-to-list-form" class="btn btn-primary">
-                        Add to list
-                    </button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+                        <button id="add-to-list-submit-button" type="submit" form="add-to-list-form" class="btn btn-primary">
+                            Додати до списку
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
 
 </div>
 
@@ -306,6 +322,7 @@
         const allShops = @Html.Raw(allShopsJson);
         const productBasePath = '@Url.Content("~/products/")';
         const addToListUrl = '@addToListUrl';
+        const isAuthenticated = @JsonSerializer.Serialize(isAuthenticated);
 
         let currentId = model.Details[0].Id;
         let currentShop = model.Details[0].Shop;
@@ -313,9 +330,9 @@
         let chart = null;
 
         const shopColors = [
-            "rgb(220, 53, 69)",     // Bootstrap danger-ish
-            "rgb(25, 135, 84)",     // Bootstrap success-ish
-            "rgb(255, 193, 7)"      // Bootstrap warning-ish
+            "rgb(220, 53, 69)",     // Bootstrap danger
+            "rgb(25, 135, 84)",     // Bootstrap success
+            "rgb(255, 193, 7)"      // Bootstrap warning
         ];
 
         const unavailableColor = "rgb(173, 181, 189)";
@@ -423,7 +440,7 @@
 
             document.getElementById("price").innerText = `${formatNumber(d.Price)} грн`;
             document.getElementById("unified-price").innerText =
-                `(${formatNumber(d.UnifiedPrice)} per ${formatMeasure(d.UnifiedMeasure)})`;
+                `(${formatNumber(d.UnifiedPrice)} за ${formatMeasure(d.UnifiedMeasure)})`;
 
             document.getElementById("avg").innerText = `${formatNumber(d.AveragePrice)} грн`;
 
@@ -443,7 +460,7 @@
             if (Math.abs(delta) < 0.005) {
                 box.innerHTML = `
                     <div class="alert alert-secondary py-2 px-3 mb-0 d-inline-flex align-items-center gap-2">
-                        <span>Price is same as usual</span>
+                        <span>Ціна така сама, як зазвичай</span>
                     </div>
                 `;
                 return;
@@ -453,14 +470,14 @@
                 box.innerHTML = `
                     <div class="alert alert-success py-2 px-3 mb-0 d-inline-flex align-items-center gap-2">
                         <span class="fs-4 lh-1">↓</span>
-                        <span>${formatNumber(absDelta)} грн cheaper than usual</span>
+                        <span>${formatNumber(absDelta)} грн дешевше, ніж зазвичай</span>
                     </div>
                 `;
             } else {
                 box.innerHTML = `
                     <div class="alert alert-danger py-2 px-3 mb-0 d-inline-flex align-items-center gap-2">
                         <span class="fs-4 lh-1">↑</span>
-                        <span>${formatNumber(absDelta)} грн more expensive than usual</span>
+                        <span>${formatNumber(absDelta)} грн дорожче, ніж зазвичай</span>
                     </div>
                 `;
             }
@@ -524,7 +541,7 @@
             });
 
             select.onchange = e => {
-                currentId = Number(e.target.value);
+                currentId = e.target.value;
                 updateUI();
             };
         }
@@ -609,6 +626,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: false,
                     interaction: {
                         mode: "nearest",
                         intersect: false
@@ -700,84 +718,86 @@
         }
 
 
-        function getAntiForgeryToken() {
-            return document.querySelector("input[name='__RequestVerificationToken']")?.value;
+        if (isAuthenticated) {
+                    function getAntiForgeryToken() {
+                        return document.querySelector("input[name='__RequestVerificationToken']")?.value;
+                    }
+
+                    function showAddToListMessage(elementId, message) {
+                        const element = document.getElementById(elementId);
+                        element.innerText = message;
+                        element.classList.remove("d-none");
+                    }
+
+                    function hideAddToListMessages() {
+                        document.getElementById("add-to-list-error").classList.add("d-none");
+                        document.getElementById("add-to-list-success").classList.add("d-none");
+                    }
+
+                    function getAddToListModal() {
+                        return bootstrap.Modal.getOrCreateInstance(document.getElementById("add-to-list-modal"));
+                    }
+
+                    document.getElementById("add-to-list-open-button").onclick = () => {
+                        const detail = getDetail(currentId);
+
+                        hideAddToListMessages();
+                        document.getElementById("add-to-list-amount").value = "1";
+                        document.getElementById("add-to-list-product-name").innerText = detail.DisplayName;
+
+                        getAddToListModal().show();
+                    };
+
+                    document.getElementById("add-to-list-form").onsubmit = async e => {
+                        e.preventDefault();
+
+                        hideAddToListMessages();
+
+                        const submitButton = document.getElementById("add-to-list-submit-button");
+                        const amount = Number(document.getElementById("add-to-list-amount").value);
+
+                        if (!Number.isFinite(amount) || amount <= 0) {
+                            showAddToListMessage("add-to-list-error", "Кількість має бути більшою за нуль.");
+                            return;
+                        }
+
+                        submitButton.disabled = true;
+
+                        try {
+                            const response = await fetch(addToListUrl, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "RequestVerificationToken": getAntiForgeryToken()
+                                },
+                                body: JSON.stringify({
+                                    productId: currentId,
+                                    amount
+                                })
+                            });
+
+                            const result = await response.json().catch(() => null);
+
+                            if (!response.ok || result?.success !== true) {
+                                showAddToListMessage(
+                                    "add-to-list-error",
+                                    result?.message ?? "Товар не було додано до списку."
+                                );
+                                return;
+                            }
+
+                            showAddToListMessage("add-to-list-success", "Товар додано до списку.");
+
+                            window.setTimeout(() => {
+                                getAddToListModal().hide();
+                            }, 700);
+                        } catch {
+                            showAddToListMessage("add-to-list-error", "Запит не виконано. Спробуйте ще раз.");
+                        } finally {
+                            submitButton.disabled = false;
+                        }
+                    };
         }
-
-        function showAddToListMessage(elementId, message) {
-            const element = document.getElementById(elementId);
-            element.innerText = message;
-            element.classList.remove("d-none");
-        }
-
-        function hideAddToListMessages() {
-            document.getElementById("add-to-list-error").classList.add("d-none");
-            document.getElementById("add-to-list-success").classList.add("d-none");
-        }
-
-        function getAddToListModal() {
-            return bootstrap.Modal.getOrCreateInstance(document.getElementById("add-to-list-modal"));
-        }
-
-        document.getElementById("add-to-list-open-button").onclick = () => {
-            const detail = getDetail(currentId);
-
-            hideAddToListMessages();
-            document.getElementById("add-to-list-amount").value = "1";
-            document.getElementById("add-to-list-product-name").innerText = detail.DisplayName;
-
-            getAddToListModal().show();
-        };
-
-        document.getElementById("add-to-list-form").onsubmit = async e => {
-            e.preventDefault();
-
-            hideAddToListMessages();
-
-            const submitButton = document.getElementById("add-to-list-submit-button");
-            const amount = Number(document.getElementById("add-to-list-amount").value);
-
-            if (!Number.isFinite(amount) || amount <= 0) {
-                showAddToListMessage("add-to-list-error", "Amount must be greater than zero.");
-                return;
-            }
-
-            submitButton.disabled = true;
-
-            try {
-                const response = await fetch(addToListUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "RequestVerificationToken": getAntiForgeryToken()
-                    },
-                    body: JSON.stringify({
-                        productId: currentId,
-                        amount
-                    })
-                });
-
-                const result = await response.json().catch(() => null);
-
-                if (!response.ok || result?.success !== true) {
-                    showAddToListMessage(
-                        "add-to-list-error",
-                        result?.message ?? "Product was not added to the list."
-                    );
-                    return;
-                }
-
-                showAddToListMessage("add-to-list-success", "Product was added to the list.");
-
-                window.setTimeout(() => {
-                    getAddToListModal().hide();
-                }, 700);
-            } catch {
-                showAddToListMessage("add-to-list-error", "Request failed. Please try again.");
-            } finally {
-                submitButton.disabled = false;
-            }
-        };
 
         document.querySelectorAll("input[name='mode']").forEach(radio => {
             radio.onchange = e => {

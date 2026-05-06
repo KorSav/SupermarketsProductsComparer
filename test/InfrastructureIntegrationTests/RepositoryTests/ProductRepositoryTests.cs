@@ -66,7 +66,7 @@ public class ProductRepositoryTests(DbContainerFixture _) : DbPerTestCaseBase(_)
             string.Join(
                 ", ",
                 all.Select(p =>
-                    $"name = {p.Name}, shop = {p.Shop}, price = {p.Price} for {p.Amount} {p.Unit}, unifiedPrice = {p.UnifiedPrice}"
+                    $"name = {p.DisplayName}, shop = {p.Shop}, price = {p.Price} for {p.Amount} {p.Unit}, unifiedPrice = {p.UnifiedPrice}"
                 )
             )
         );

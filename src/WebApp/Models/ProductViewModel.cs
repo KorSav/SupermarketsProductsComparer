@@ -58,7 +58,7 @@ public record ProductViewModel(
     }
 
     public record ProductDetail(
-        int Id,
+        Guid Id,
         string DisplayName,
         Shop Shop,
         string LinkImage,
@@ -70,7 +70,7 @@ public record ProductViewModel(
         Measure Measure
     );
 
-    public record PriceHistory(int ProductDetailId, IReadOnlyCollection<PriceEntry> History)
+    public record PriceHistory(Guid ProductDetailId, IReadOnlyCollection<PriceEntry> History)
     {
         public IReadOnlyCollection<PriceEntry> History { get; } =
             History.OrderBy(e => e.Date).ToList().AsReadOnly();
@@ -78,7 +78,7 @@ public record ProductViewModel(
 
     public record PriceEntry(decimal Price, decimal UnifiedPrice, DateTime Date);
 
-    public record ShopMeasureId(Shop Shop, Measure Measure, int Id);
+    public record ShopMeasureId(Shop Shop, Measure Measure, Guid Id);
 
     public List<ShopMeasureId> ShopMeasureIds =>
         Details.Select(d => new ShopMeasureId(d.Shop, d.Measure, d.Id)).ToList();

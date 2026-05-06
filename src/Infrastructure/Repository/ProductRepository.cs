@@ -22,7 +22,7 @@ internal class ProductRepository(AppDbContext dbContext) : IProductRepository
         CancellationToken cancellationToken
     )
     {
-        var queriable = dbContext.Products.AsQueryable();
+        var queriable = dbContext.Products.Include(e => e.PriceHistory).AsQueryable();
         if (query.Request.ApplySearchString)
         {
             var words = query.Request.SearchString.Split(
@@ -36,8 +36,20 @@ internal class ProductRepository(AppDbContext dbContext) : IProductRepository
         queriable = query.Request.SortBy switch
         {
             SortBy.Name => queriable.OrderBy(e => e.Name, query.Request.SortOrder),
-            SortBy.Price => queriable.OrderBy(e => e.Price, query.Request.SortOrder),
-            SortBy.UnifiedPrice => queriable.OrderBy(e => e.UnifiedPrice, query.Request.SortOrder),
+            SortBy.Price => queriable.OrderBy(
+                e =>
+                    e.PriceHistory.OrderByDescending(e => e.ParsedAt)
+                        .Select(e => e.Price)
+                        .FirstOrDefault(),
+                query.Request.SortOrder
+            ),
+            SortBy.UnifiedPrice => queriable.OrderBy(
+                e =>
+                    e.PriceHistory.OrderByDescending(e => e.ParsedAt)
+                        .Select(e => e.UnifiedPrice)
+                        .FirstOrDefault(),
+                query.Request.SortOrder
+            ),
             _ => throw new NotImplementedException(
                 $"Column to sort by is not defined: '{query.Request.SortBy}'"
             ),
@@ -74,3 +86,12 @@ file static class Extensions
         return $"%{str}%";
     }
 }
+
+
+// 1. If product from stage table with exactly same name, shop, amount and unit already exists in database - update price history for existing product (if price has not changed and there are more than 2 entries - update datetime; if price has not changed and there none or one entry - insert new entry; if price has changed - insert new entry)
+// 2. If product from stage table with exactly same name exists but either shop or amount or unit differs - create new product entry and price history entry in the existing product group
+// 3. If there are no product with given name - add new product entry and price history. Find product group with same normalized name - if it exists then add product to the group, if not - create new group with the normalized name.
+// 3.1. Find out best groups for each product without DISTINCT ON for product name
+// 3.2. Find out which new groups should be created with distinct names and such that each group has trigram ideally less then 0.9 with all others new groups. Do this in 2 passes - consider all pairs and  use only one from pair if similarity is >0.9 picking name coming first in alphabetical order. Do second same pass among result from previous to mitigate first level of transitivity.
+// 3.3. During resolution of the group for products, keep as it is for products that already had a group assigned,  but for products that had score less than or equal 0.9 - again find out best matching group from newly added list (pick the best even if it has score less than 0.9).
+// 3.4. Only then update products table with these data

@@ -1,8 +1,11 @@
+using System.Text;
+
 namespace ApplicationCore.Entities.Product;
 
 public record Product(
-    int Id,
+    Guid Id,
     string Name,
+    string NameSuffix,
     decimal Price,
     Measure Measure,
     Uri LinkProduct,
@@ -10,6 +13,9 @@ public record Product(
     Shop Shop
 )
 {
+    public string NormalizedName => NormalizeName(Name);
+    public string DisplayName => Name + NameSuffix;
+
     public Product WithPricePer(Measure measure)
     {
         var scale = Measure.ScaleFactorTo(measure);
@@ -43,4 +49,29 @@ public record Product(
                 $"Unified unit for dimension '{current.Dimension}' is undefined"
             ),
         };
+
+    public static string NormalizeName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return string.Empty;
+
+        // Lowercase and remove punctuation/special chars
+        // Replace punctuation with space to avoid merging words like "Coca-Cola" into "cocacola"
+        var sb = new StringBuilder();
+        foreach (char c in name.ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(c) || c is '%')
+                sb.Append(c);
+            else if (char.IsWhiteSpace(c) || char.IsPunctuation(c))
+                sb.Append(' ');
+        }
+
+        // Filter potential stopwords
+        var words = sb.ToString()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length > 2)
+            .Order();
+
+        return string.Join(" ", words);
+    }
 }
