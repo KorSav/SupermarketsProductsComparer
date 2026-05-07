@@ -11,10 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddSingleton<InMemoryPurchaseStore>();
-
-builder.Services.AddSingleton<IProductListService, InMemoryProductListService>();
-builder.Services.AddSingleton<IPurchasesService, InMemoryPurchasesService>();
+builder.Services.AddScoped<IProductListService, EfProductListService>();
+builder.Services.AddScoped<IPurchasesService, EfPurchasesService>();
 
 builder
     .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

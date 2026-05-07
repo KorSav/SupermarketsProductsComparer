@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using ApplicationCore.Entities.Request;
 
-namespace WebApp.Controllers.DTOs;
+namespace WebApp.DTOs;
 
 public record ToggleRequestDto(
     [Required(AllowEmptyStrings = false)] string Find,

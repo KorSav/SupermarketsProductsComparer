@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using ApplicationCore.Entities;
 
-namespace WebApp.Controllers.Mappings;
+namespace WebApp.Mappings;
 
 public static class ClaimsPrincipalExtenstions
 {

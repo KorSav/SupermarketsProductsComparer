@@ -25,18 +25,9 @@ public sealed class PurchasesController : Controller
     {
         Guid userId = GetUserId();
 
-        PagedResult<PurchaseListItemViewModel> page = await _purchasesService.FindPageAsync(
-            userId,
-            query,
-            cancellationToken
-        );
+        var page = await _purchasesService.FindPageAsync(userId, query, cancellationToken);
 
-        PurchasesViewModel model = new(
-            Items: page.Items,
-            Query: query,
-            TotalCount: page.TotalCount,
-            TotalPages: page.TotalPages
-        );
+        PurchasesViewModel model = new(page, query, page.PagesCount, page.PagesCount);
 
         return View(model);
     }

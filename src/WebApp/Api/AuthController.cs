@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApp.Controllers.DTOs;
-using WebApp.Controllers.Mappings;
+using WebApp.DTOs;
+using WebApp.Mappings;
 
-namespace WebApp.Controllers.Api;
+namespace WebApp.Api;
 
 public class AuthController(UserService userService) : ControllerBase
 {

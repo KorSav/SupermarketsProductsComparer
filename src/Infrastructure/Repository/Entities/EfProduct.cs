@@ -31,6 +31,13 @@ public class EfProduct
 
     public string FullLinkImage { get; set; } = null!;
 
+    [ForeignKey(nameof(ProductGroupId))]
+    public EfProductGroup ProductGroup { get; set; } = null!;
+
+    public ICollection<EfProductListEntry> ProductListEntries { get; set; } = [];
+
+    public ICollection<EfPurchaseEntry> PurchaseEntries { get; set; } = [];
+
     public CoreProduct ToCoreProduct() =>
         new(
             Id,

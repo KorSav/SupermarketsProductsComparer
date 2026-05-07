@@ -3,8 +3,7 @@
 @using Microsoft.AspNetCore.Components;
 @using Microsoft.Extensions.Primitives
 @using System.Diagnostics
-@using WebApp.Controllers.Enums
-@using WebApp.Controllers.Mappings
+@using WebApp.Mappings
 
 @{
     ViewData["Title"] = "Product List";
@@ -111,7 +110,7 @@
                                     @pinfo.UnifiedPrice.ToDisplayString() грн/@($"{pinfo.UnifiedMeasure.Unit.ToLocalString()}")
                                 </span>
                             </div>
-                            <h5 class="card-title h6 mb-3">@pinfo.Product.Name</h5>
+                            <h5 class="card-title h6 mb-3">@pinfo.Product.DisplayName</h5>
                             
                             <div class="mt-auto position-relative" style="z-index: 3;">
                                 <a href="@pinfo.Product.LinkProduct" target="_blank" class="btn btn-sm btn-outline-secondary w-100">

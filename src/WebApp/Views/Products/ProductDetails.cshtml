@@ -1,7 +1,7 @@
 @model ProductViewModel
 @using System.Text.Json
 @using ApplicationCore.Entities.Product
-@using WebApp.Controllers.Mappings
+@using WebApp.Mappings
 
 @{
     var json = Model.ToJson();
@@ -93,6 +93,33 @@
     @@media (max-width: 991.98px) {
         .product-main-image { height: 300px; }
         .chart-container { height: 280px; }
+    }
+    /* The overlay layer sits over the top half of the card */
+    .compare-overlay-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 70%; /* Covers the image area */
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        z-index: 2;
+    }
+
+    /* Show on hover */
+    .custom-card-hover:hover .compare-overlay-layer {
+        opacity: 1;
+    }
+
+    /* Soften the image when hovering for better contrast */
+    .custom-card-hover:hover img {
+        opacity: 0.6;
+        transition: 0.2s;
+    }
+
+    /* Ensure the bottom button remains clickable over the stretched link */
+    .mt-auto.position-relative {
+        z-index: 5;
     }
 </style>
 
@@ -232,32 +259,41 @@
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
                 @foreach (var pinfo in Model.Recommended)
                 {
-                    <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        <img src="@pinfo.Product.LinkImage" class="card-img-top p-3" alt="@pinfo.Product.Name"
-                             style="height: 220px; object-fit: contain;">
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 position-relative custom-card-hover">
+                        
+                        <!-- Product Image -->
+                        <div class="p-3 text-center">
+                            <img src="@pinfo.Product.LinkImage" class="img-fluid" style="height: 200px; object-fit: contain;" alt="@pinfo.Product.LinkImage">
+                        </div>
+
+                        <!-- Compare Overlay -->
+                        <div class="compare-overlay-layer d-flex align-items-center justify-content-center">
+                            <a asp-controller="Products" 
+                            asp-action="ProductDetails" 
+                            asp-route-id="@pinfo.Product.Id" 
+                            class="btn btn-primary btn-sm rounded-pill stretched-link shadow-sm compare-label">
+                                <i class="bi bi-info-circle me-2"></i>Details
+                            </a>
+                        </div>
 
                         <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
                             @pinfo.Product.Shop
                         </span>
 
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-center mb-3 gap-2">
-                                <span class="badge bg-primary fs-6 px-2 py-1">
+                        <div class="card-body d-flex flex-column pt-0">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-primary">
                                     @pinfo.Product.Price.ToDisplayString() грн
                                 </span>
-
                                 <span class="text-muted small">
-                                    @pinfo.UnifiedPrice.ToDisplayString()
-                                    грн/@($"{pinfo.UnifiedMeasure.Count.ToDisplayString()}{pinfo.UnifiedMeasure.Unit.ToLocalString()}")
+                                    @pinfo.UnifiedPrice.ToDisplayString() грн/@($"{pinfo.UnifiedMeasure.Unit.ToLocalString()}")
                                 </span>
                             </div>
-
-                            <h5 class="card-title text-center mb-3">@pinfo.Product.Name</h5>
-
-                            <div class="mt-auto text-center">
-                                <a href="@pinfo.Product.LinkProduct" target="_blank"
-                                   class="btn btn-outline-secondary w-100">
+                            <h5 class="card-title h6 mb-3">@pinfo.Product.DisplayName</h5>
+                            
+                            <div class="mt-auto position-relative" style="z-index: 3;">
+                                <a href="@pinfo.Product.LinkProduct" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
                                     На сайт магазину
                                 </a>
                             </div>

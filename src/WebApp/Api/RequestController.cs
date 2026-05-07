@@ -1,10 +1,10 @@
 using ApplicationCore.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApp.Controllers.DTOs;
-using WebApp.Controllers.Mappings;
+using WebApp.DTOs;
+using WebApp.Mappings;
 
-namespace WebApp.Controllers.Api;
+namespace WebApp.Api;
 
 [ApiController]
 [Route("Request")]

@@ -4,7 +4,7 @@ using ApplicationCore.Services;
 using ApplicationCore.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApp.Controllers.Mappings;
+using WebApp.Mappings;
 
 namespace WebApp.Controllers;
 

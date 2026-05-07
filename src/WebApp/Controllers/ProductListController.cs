@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebApp.DTOs;
 using WebApp.Models;
 using WebApp.Services;
 
@@ -161,10 +162,7 @@ public sealed class ProductListController(IProductListService productListService
 
     private Guid GetUserId()
     {
-        string? rawUserId =
-            User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub")
-            ?? User.FindFirstValue("userId");
+        string? rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (!Guid.TryParse(rawUserId, out Guid userId))
             throw new InvalidOperationException("Authenticated user id is missing or invalid.");

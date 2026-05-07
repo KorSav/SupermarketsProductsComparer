@@ -39,7 +39,7 @@ file static class RemoveItAndUseSeparateFile
         LANGUAGE plpgsql
         AS $$
         DECLARE
-            utc_now timestamp without time zone := timezone('UTC', now());
+            utc_now timestamptz := now();
         BEGIN
             -------------------------------------------------------------------------
             -- 0. Prepare deduplicated working stage.

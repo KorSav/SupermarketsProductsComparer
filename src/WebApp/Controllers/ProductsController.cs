@@ -5,8 +5,8 @@ using ApplicationCore.Services;
 using Infrastructure.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Controllers.DTOs;
-using WebApp.Controllers.Mappings;
+using WebApp.DTOs;
+using WebApp.Mappings;
 using WebApp.Models;
 using static WebApp.Models.ProductViewModel;
 

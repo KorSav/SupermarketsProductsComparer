@@ -1,235 +1,15 @@
-using System.Collections.Concurrent;
 using ApplicationCore.Entities.Product;
 using ApplicationCore.Entities.Request;
+using ApplicationCore.Utils;
+using Infrastructure.Repository;
+using Microsoft.EntityFrameworkCore;
 using WebApp.Models;
 
 namespace WebApp.Services;
 
-public sealed record DemoReceiptEntry(
-    string ProductName,
-    Measure Measure,
-    decimal SpentAmount,
-    Shop Shop
-);
-
-public sealed record DemoPurchase(
-    Guid Id,
-    Guid UserId,
-    DateTimeOffset Date,
-    IReadOnlyList<DemoReceiptEntry> Receipt
-)
-{
-    public decimal Total => Receipt.Sum(x => x.SpentAmount);
-}
-
-public sealed class InMemoryPurchaseStore
-{
-    private readonly ConcurrentDictionary<Guid, List<DemoPurchase>> _purchasesByUser = new();
-
-    public IReadOnlyList<DemoPurchase> GetUserPurchases(Guid userId)
-    {
-        List<DemoPurchase> purchases = GetOrCreateUserPurchases(userId);
-
-        lock (purchases)
-        {
-            return purchases.ToList();
-        }
-    }
-
-    public void AddPurchase(DemoPurchase purchase)
-    {
-        List<DemoPurchase> purchases = GetOrCreateUserPurchases(purchase.UserId);
-
-        lock (purchases)
-        {
-            purchases.Add(purchase);
-        }
-    }
-
-    public bool RemovePurchase(Guid userId, Guid purchaseId)
-    {
-        List<DemoPurchase> purchases = GetOrCreateUserPurchases(userId);
-
-        lock (purchases)
-        {
-            DemoPurchase? purchase = purchases.FirstOrDefault(x => x.Id == purchaseId);
-
-            if (purchase is null)
-                return false;
-
-            purchases.Remove(purchase);
-            return true;
-        }
-    }
-
-    private List<DemoPurchase> GetOrCreateUserPurchases(Guid userId)
-    {
-        return _purchasesByUser.GetOrAdd(userId, CreateSeedPurchases);
-    }
-
-    private static List<DemoPurchase> CreateSeedPurchases(Guid userId)
-    {
-        return
-        [
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-1),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Молоко Яготинське 2.6%",
-                        Measure: new Measure(2m, MeasureUnit.Litre),
-                        SpentAmount: 85.00m,
-                        Shop: Shop.Silpo
-                    ),
-                    new DemoReceiptEntry(
-                        ProductName: "Хліб пшеничний",
-                        Measure: new Measure(1m, MeasureUnit.Count),
-                        SpentAmount: 28.90m,
-                        Shop: Shop.Fozzy
-                    ),
-                ]
-            ),
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-4),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Сир кисломолочний",
-                        Measure: new Measure(600m, MeasureUnit.Gram),
-                        SpentAmount: 159.98m,
-                        Shop: Shop.Silpo
-                    ),
-                    new DemoReceiptEntry(
-                        ProductName: "Яйця курячі",
-                        Measure: new Measure(10m, MeasureUnit.Count),
-                        SpentAmount: 64.50m,
-                        Shop: Shop.Silpo
-                    ),
-                ]
-            ),
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-10),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Кава мелена",
-                        Measure: new Measure(250m, MeasureUnit.Gram),
-                        SpentAmount: 189.99m,
-                        Shop: Shop.Fozzy
-                    ),
-                ]
-            ),
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-10),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Кава мелена",
-                        Measure: new Measure(250m, MeasureUnit.Gram),
-                        SpentAmount: 189.99m,
-                        Shop: Shop.Fozzy
-                    ),
-                ]
-            ),
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-10),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Кава мелена",
-                        Measure: new Measure(250m, MeasureUnit.Gram),
-                        SpentAmount: 189.99m,
-                        Shop: Shop.Fozzy
-                    ),
-                ]
-            ),
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-10),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Кава мелена",
-                        Measure: new Measure(250m, MeasureUnit.Gram),
-                        SpentAmount: 189.99m,
-                        Shop: Shop.Fozzy
-                    ),
-                ]
-            ),
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-10),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Кава мелена",
-                        Measure: new Measure(250m, MeasureUnit.Gram),
-                        SpentAmount: 189.99m,
-                        Shop: Shop.Fozzy
-                    ),
-                ]
-            ),
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-10),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Кава мелена",
-                        Measure: new Measure(250m, MeasureUnit.Gram),
-                        SpentAmount: 189.99m,
-                        Shop: Shop.Fozzy
-                    ),
-                ]
-            ),
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-10),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Кава мелена",
-                        Measure: new Measure(250m, MeasureUnit.Gram),
-                        SpentAmount: 189.99m,
-                        Shop: Shop.Fozzy
-                    ),
-                ]
-            ),
-            new DemoPurchase(
-                Id: Guid.NewGuid(),
-                UserId: userId,
-                Date: DateTimeOffset.Now.AddDays(-10),
-                Receipt:
-                [
-                    new DemoReceiptEntry(
-                        ProductName: "Кава мелена",
-                        Measure: new Measure(250m, MeasureUnit.Gram),
-                        SpentAmount: 189.99m,
-                        Shop: Shop.Fozzy
-                    ),
-                ]
-            ),
-        ];
-    }
-}
-
 public interface IPurchasesService
 {
-    Task<PagedResult<PurchaseListItemViewModel>> FindPageAsync(
+    Task<PaginatedList<PurchaseListItemViewModel>> FindPageAsync(
         Guid userId,
         PurchasesQuery query,
         CancellationToken cancellationToken
@@ -238,10 +18,9 @@ public interface IPurchasesService
     Task RemoveAsync(Guid userId, Guid purchaseId, CancellationToken cancellationToken);
 }
 
-public sealed class InMemoryPurchasesService(InMemoryPurchaseStore purchaseStore)
-    : IPurchasesService
+public sealed class EfPurchasesService(AppDbContext dbContext) : IPurchasesService
 {
-    public Task<PagedResult<PurchaseListItemViewModel>> FindPageAsync(
+    public async Task<PaginatedList<PurchaseListItemViewModel>> FindPageAsync(
         Guid userId,
         PurchasesQuery query,
         CancellationToken cancellationToken
@@ -249,22 +28,23 @@ public sealed class InMemoryPurchasesService(InMemoryPurchaseStore purchaseStore
     {
         PurchasesQuery normalizedQuery = NormalizeQuery(query);
 
-        IEnumerable<DemoPurchase> purchases = purchaseStore.GetUserPurchases(userId);
+        IQueryable<Infrastructure.Repository.Entities.EfPurchase> purchases = dbContext
+            .Purchases.Include(x => x.Entries)
+            .Where(x => x.UserId == userId);
 
         if (normalizedQuery.DateFrom is not null)
         {
-            DateOnly dateFrom = normalizedQuery.DateFrom.Value;
-
-            purchases = purchases.Where(x =>
-                DateOnly.FromDateTime(x.Date.LocalDateTime) >= dateFrom
-            );
+            DateTime dateFrom = normalizedQuery.DateFrom.Value.ToDateTime(TimeOnly.MinValue);
+            purchases = purchases.Where(x => x.Date >= dateFrom);
         }
 
         if (normalizedQuery.DateTo is not null)
         {
-            DateOnly dateTo = normalizedQuery.DateTo.Value;
+            DateTime dateToExclusive = normalizedQuery
+                .DateTo.Value.AddDays(1)
+                .ToDateTime(TimeOnly.MinValue);
 
-            purchases = purchases.Where(x => DateOnly.FromDateTime(x.Date.LocalDateTime) <= dateTo);
+            purchases = purchases.Where(x => x.Date < dateToExclusive);
         }
 
         if (normalizedQuery.MinTotal is not null)
@@ -279,36 +59,52 @@ public sealed class InMemoryPurchasesService(InMemoryPurchaseStore purchaseStore
 
         purchases = ApplySorting(purchases, normalizedQuery);
 
-        int totalCount = purchases.Count();
+        int totalCount = await purchases.CountAsync(cancellationToken);
 
-        IReadOnlyList<PurchaseListItemViewModel> items = purchases
+        IReadOnlyList<PurchaseListItemViewModel> items = await purchases
             .Skip((normalizedQuery.Page - 1) * normalizedQuery.PageSize)
             .Take(normalizedQuery.PageSize)
-            .Select(ToViewModel)
-            .ToList();
+            .Select(x => new PurchaseListItemViewModel(
+                x.Id,
+                x.Date,
+                x.Total,
+                x.Entries.OrderBy(e => e.ProductName)
+                    .Select(e => new ReceiptEntryViewModel(
+                        e.ProductName,
+                        new Measure(e.MeasureCount, e.MeasureUnit),
+                        e.SpentAmount,
+                        e.Shop
+                    ))
+                    .ToList()
+            ))
+            .ToListAsync(cancellationToken);
 
-        PagedResult<PurchaseListItemViewModel> result = new(
-            Items: items,
-            TotalCount: totalCount,
-            Page: normalizedQuery.Page,
-            PageSize: normalizedQuery.PageSize
+        return new PaginatedList<PurchaseListItemViewModel>(
+            items,
+            totalCount,
+            normalizedQuery.Page - 1,
+            normalizedQuery.PageSize
         );
-
-        return Task.FromResult(result);
     }
 
-    public Task RemoveAsync(Guid userId, Guid purchaseId, CancellationToken cancellationToken)
+    public async Task RemoveAsync(Guid userId, Guid purchaseId, CancellationToken cancellationToken)
     {
-        bool removed = purchaseStore.RemovePurchase(userId, purchaseId);
+        Infrastructure.Repository.Entities.EfPurchase? purchase =
+            await dbContext.Purchases.FirstOrDefaultAsync(
+                x => x.Id == purchaseId && x.UserId == userId,
+                cancellationToken
+            );
 
-        if (!removed)
+        if (purchase is null)
             throw new InvalidOperationException("Purchase was not found.");
 
-        return Task.CompletedTask;
+        dbContext.Purchases.Remove(purchase);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private static IEnumerable<DemoPurchase> ApplySorting(
-        IEnumerable<DemoPurchase> purchases,
+    private static IQueryable<Infrastructure.Repository.Entities.EfPurchase> ApplySorting(
+        IQueryable<Infrastructure.Repository.Entities.EfPurchase> purchases,
         PurchasesQuery query
     )
     {
@@ -320,23 +116,6 @@ public sealed class InMemoryPurchasesService(InMemoryPurchaseStore purchaseStore
             (PurchaseSortBy.Date, SortOrder.Asc) => purchases.OrderBy(x => x.Date),
             _ => purchases.OrderByDescending(x => x.Date),
         };
-    }
-
-    private static PurchaseListItemViewModel ToViewModel(DemoPurchase purchase)
-    {
-        return new PurchaseListItemViewModel(
-            Id: purchase.Id,
-            Date: purchase.Date,
-            Total: purchase.Total,
-            Receipt: purchase
-                .Receipt.Select(x => new ReceiptEntryViewModel(
-                    ProductName: x.ProductName,
-                    Measure: x.Measure,
-                    SpentAmount: x.SpentAmount,
-                    Shop: x.Shop
-                ))
-                .ToList()
-        );
     }
 
     private static PurchasesQuery NormalizeQuery(PurchasesQuery query)

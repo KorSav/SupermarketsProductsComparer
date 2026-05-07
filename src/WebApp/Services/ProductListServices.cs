@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using System.Data;
 using ApplicationCore.Entities.Product;
 using Infrastructure.Repository;
 using Infrastructure.Repository.Entities;
@@ -34,32 +34,27 @@ public interface IProductListService
     Task<Guid> StoreCurrentAsPurchaseAsync(Guid userId, CancellationToken cancellationToken);
 }
 
-public sealed class InMemoryProductListService : IProductListService
+public sealed class EfProductListService(AppDbContext dbContext) : IProductListService
 {
-    private readonly InMemoryPurchaseStore _purchaseStore;
-
-    private readonly ConcurrentDictionary<Guid, List<ProductListEntryViewModel>> _lists = new();
-    private readonly IServiceProvider _serviceProvider;
-
-    public InMemoryProductListService(
-        InMemoryPurchaseStore purchaseStore,
-        IServiceProvider serviceProvider
-    )
-    {
-        _purchaseStore = purchaseStore;
-        _serviceProvider = serviceProvider;
-    }
-
-    public Task<ProductListViewModel> GetCurrentAsync(
+    public async Task<ProductListViewModel> GetCurrentAsync(
         Guid userId,
         CancellationToken cancellationToken
     )
     {
-        List<ProductListEntryViewModel> entries = GetOrCreateUserList(userId);
+        EfProductList? list = await dbContext
+            .ProductLists.AsNoTracking()
+            .Include(x => x.Entries)
+            .ThenInclude(x => x.Product)
+            .ThenInclude(x => x.PriceHistory)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
 
-        ProductListViewModel model = new(entries.ToList());
+        if (list is null)
+        {
+            return new ProductListViewModel([]);
+        }
 
-        return Task.FromResult(model);
+        return ToProductListViewModel(list);
     }
 
     public async Task<ProductListViewModel> AddEntryAsync(
@@ -75,71 +70,73 @@ public sealed class InMemoryProductListService : IProductListService
                 "Amount must be greater than zero."
             );
 
-        EfProduct? efProduct = null;
-        await using (var scope = _serviceProvider.CreateAsyncScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            efProduct = await dbContext
-                .Products.Include(p => p.PriceHistory)
-                .FirstOrDefaultAsync(x => x.Id == productId, cancellationToken);
-        }
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken
+        );
 
-        if (efProduct is null)
+        EfProductList list = await GetOrCreateCurrentListAsync(userId, cancellationToken);
+
+        bool productExists = await dbContext.Products.AnyAsync(
+            x => x.Id == productId,
+            cancellationToken
+        );
+
+        if (!productExists)
             throw new KeyNotFoundException("Product was not found.");
 
-        Product product = efProduct.ToCoreProduct();
-        List<ProductListEntryViewModel> entries = GetOrCreateUserList(userId);
+        EfProductListEntry? existingEntry = await dbContext.ProductListEntries.FirstOrDefaultAsync(
+            x => x.ProductListId == list.Id && x.ProductId == productId,
+            cancellationToken
+        );
 
-        lock (entries)
+        if (existingEntry is not null)
         {
-            int existingIndex = entries.FindIndex(x => x.Product.Id == productId);
-
-            if (existingIndex >= 0)
-            {
-                ProductListEntryViewModel existingEntry = entries[existingIndex];
-                entries[existingIndex] = existingEntry with
-                {
-                    Product = product,
-                    Amount = existingEntry.Amount + amount,
-                };
-            }
-            else
-            {
-                entries.Add(
-                    new ProductListEntryViewModel(
-                        EntryId: Guid.NewGuid(),
-                        Product: product,
-                        Amount: amount
-                    )
-                );
-            }
-
-            return new ProductListViewModel(entries.ToList());
+            existingEntry.Amount += amount;
         }
+        else
+        {
+            dbContext.ProductListEntries.Add(
+                new EfProductListEntry
+                {
+                    Id = Guid.NewGuid(),
+                    ProductListId = list.Id,
+                    ProductId = productId,
+                    Amount = amount,
+                }
+            );
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return await GetCurrentAsync(userId, cancellationToken);
     }
 
-    public Task<ProductListViewModel> RemoveEntryAsync(
+    public async Task<ProductListViewModel> RemoveEntryAsync(
         Guid userId,
         Guid entryId,
         CancellationToken cancellationToken
     )
     {
-        List<ProductListEntryViewModel> entries = GetOrCreateUserList(userId);
+        EfProductListEntry? entry = await dbContext
+            .ProductListEntries.Include(x => x.ProductList)
+            .FirstOrDefaultAsync(
+                x => x.Id == entryId && x.ProductList.UserId == userId,
+                cancellationToken
+            );
 
-        lock (entries)
-        {
-            ProductListEntryViewModel? entry = entries.FirstOrDefault(x => x.EntryId == entryId);
+        if (entry is null)
+            throw new InvalidOperationException("Product list entry was not found.");
 
-            if (entry is null)
-                throw new InvalidOperationException("Product list entry was not found.");
+        dbContext.ProductListEntries.Remove(entry);
 
-            entries.Remove(entry);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
-            return Task.FromResult(new ProductListViewModel(entries.ToList()));
-        }
+        return await GetCurrentAsync(userId, cancellationToken);
     }
 
-    public Task<ProductListViewModel> UpdateEntryAmountAsync(
+    public async Task<ProductListViewModel> UpdateEntryAmountAsync(
         Guid userId,
         Guid entryId,
         decimal amount,
@@ -152,125 +149,127 @@ public sealed class InMemoryProductListService : IProductListService
                 "Amount must be greater than zero."
             );
 
-        List<ProductListEntryViewModel> entries = GetOrCreateUserList(userId);
-
-        lock (entries)
-        {
-            int index = entries.FindIndex(x => x.EntryId == entryId);
-
-            if (index < 0)
-                throw new InvalidOperationException("Product list entry was not found.");
-
-            ProductListEntryViewModel current = entries[index];
-
-            entries[index] = current with { Amount = amount };
-
-            return Task.FromResult(new ProductListViewModel(entries.ToList()));
-        }
-    }
-
-    public Task<Guid> StoreCurrentAsPurchaseAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        List<ProductListEntryViewModel> entries = GetOrCreateUserList(userId);
-
-        lock (entries)
-        {
-            if (entries.Count == 0)
-                throw new InvalidOperationException("Product list is empty.");
-
-            Guid purchaseId = Guid.NewGuid();
-
-            DemoPurchase purchase = new(
-                Id: purchaseId,
-                UserId: userId,
-                Date: DateTimeOffset.Now,
-                Receipt: entries.Select(ToReceiptEntry).ToList()
+        EfProductListEntry? entry = await dbContext
+            .ProductListEntries.Include(x => x.ProductList)
+            .FirstOrDefaultAsync(
+                x => x.Id == entryId && x.ProductList.UserId == userId,
+                cancellationToken
             );
 
-            _purchaseStore.AddPurchase(purchase);
+        if (entry is null)
+            throw new InvalidOperationException("Product list entry was not found.");
 
-            entries.Clear();
+        entry.Amount = amount;
 
-            return Task.FromResult(purchaseId);
-        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return await GetCurrentAsync(userId, cancellationToken);
     }
 
-    private static DemoReceiptEntry ToReceiptEntry(ProductListEntryViewModel entry)
+    public async Task<Guid> StoreCurrentAsPurchaseAsync(
+        Guid userId,
+        CancellationToken cancellationToken
+    )
     {
-        decimal purchasedMeasureCount = entry.Product.Measure.Count * entry.Amount;
-        decimal spentAmount = entry.Product.Price * entry.Amount;
-
-        return new DemoReceiptEntry(
-            ProductName: entry.Product.Name,
-            Measure: new Measure(purchasedMeasureCount, entry.Product.Measure.Unit),
-            SpentAmount: spentAmount,
-            Shop: entry.Product.Shop
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken
         );
+
+        EfProductList list =
+            await dbContext
+                .ProductLists.Include(x => x.Entries)
+                .ThenInclude(x => x.Product)
+                .ThenInclude(x => x.PriceHistory)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken)
+            ?? throw new InvalidOperationException("Product list was not found.");
+
+        if (list.Entries.Count == 0)
+            throw new InvalidOperationException("Product list is empty.");
+
+        List<EfPurchaseEntry> purchaseEntries = list.Entries.Select(ToPurchaseEntry).ToList();
+
+        Guid purchaseId = Guid.NewGuid();
+
+        foreach (EfPurchaseEntry entry in purchaseEntries)
+        {
+            entry.PurchaseId = purchaseId;
+        }
+
+        EfPurchase purchase = new()
+        {
+            Id = purchaseId,
+            UserId = userId,
+            Date = DateTime.UtcNow,
+            Entries = purchaseEntries,
+            Total = purchaseEntries.Sum(x => x.SpentAmount),
+        };
+
+        dbContext.Purchases.Add(purchase);
+        dbContext.ProductListEntries.RemoveRange(list.Entries);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return purchaseId;
     }
 
-    private List<ProductListEntryViewModel> GetOrCreateUserList(Guid userId)
+    private async Task<EfProductList> GetOrCreateCurrentListAsync(
+        Guid userId,
+        CancellationToken cancellationToken
+    )
     {
-        return _lists.GetOrAdd(userId, _ => []);
+        EfProductList? existingList = await dbContext.ProductLists.FirstOrDefaultAsync(
+            x => x.UserId == userId,
+            cancellationToken
+        );
+
+        if (existingList is not null)
+            return existingList;
+
+        EfProductList newList = new() { Id = Guid.NewGuid(), UserId = userId };
+
+        dbContext.ProductLists.Add(newList);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return newList;
     }
 
-    private static List<ProductListEntryViewModel> CreateSeedList()
+    private static ProductListViewModel ToProductListViewModel(EfProductList list)
     {
-        return
-        [
-            new ProductListEntryViewModel(
-                EntryId: Guid.NewGuid(),
-                Product: new Product(
-                    Id: Guid.NewGuid(),
-                    Name: "Молоко Яготинське 2.6%",
-                    NameSuffix: ", 1 L",
-                    Price: 42.50m,
-                    Measure: new Measure(1m, MeasureUnit.Litre),
-                    LinkProduct: new Uri(
-                        "https://silpo.ua/product/moloko-ultrapasteryzovane-selianske-simeine-osoblyve-2-5-726270"
-                    ),
-                    LinkImage: new Uri(
-                        "https://images.silpo.ua/v2/products/300x300/webp/970762f5-ed06-49b4-bbf7-3f3545304283.png"
-                    ),
-                    Shop: Shop.Silpo
-                ),
-                Amount: 2m
-            ),
-            new ProductListEntryViewModel(
-                EntryId: Guid.NewGuid(),
-                Product: new Product(
-                    Id: Guid.NewGuid(),
-                    Name: "Хліб пшеничний",
-                    NameSuffix: ", 1 pc",
-                    Price: 28.90m,
-                    Measure: new Measure(1m, MeasureUnit.Count),
-                    LinkProduct: new Uri(
-                        "https://fora.ua/product/khlib-kyivkhlib-pshenychnyi-narizanyi-959556"
-                    ),
-                    LinkImage: new Uri(
-                        "https://content.fora.ua/sku/ecommerce/95/480x480wwm/959556_480x480wwm_f67cb10b-287a-f3d9-bf51-d65a7336e09e.png"
-                    ),
-                    Shop: Shop.Fora
-                ),
-                Amount: 1m
-            ),
-            new ProductListEntryViewModel(
-                EntryId: Guid.NewGuid(),
-                Product: new Product(
-                    Id: Guid.NewGuid(),
-                    Name: "Сир кисломолочний",
-                    NameSuffix: ", 300 g",
-                    Price: 79.99m,
-                    Measure: new Measure(300m, MeasureUnit.Gram),
-                    LinkProduct: new Uri(
-                        "https://fozzyshop.ua/syr-kyslomolochnyy/1009618-syr-kyslomolochnyi-bilo-5.html"
-                    ),
-                    LinkImage: new Uri(
-                        "https://media.fozzyshop.ua/sku/1009618/product/d3f67dfd-e0c8-7cdb-5138-deced9771678.webp"
-                    ),
-                    Shop: Shop.Silpo
-                ),
-                Amount: 1.5m
-            ),
-        ];
+        IReadOnlyList<ProductListEntryViewModel> entries = list
+            .Entries.OrderBy(x => x.Product.Name)
+            .Select(x => new ProductListEntryViewModel(
+                EntryId: x.Id,
+                Product: x.Product.ToCoreProduct(),
+                Amount: x.Amount
+            ))
+            .ToList();
+
+        return new ProductListViewModel(entries);
+    }
+
+    private static EfPurchaseEntry ToPurchaseEntry(EfProductListEntry entry)
+    {
+        Product product = entry.Product.ToCoreProduct();
+
+        decimal purchasedMeasureCount = product.Measure.Count * entry.Amount;
+        decimal spentAmount = product.Price * entry.Amount;
+
+        return new EfPurchaseEntry
+        {
+            Id = Guid.NewGuid(),
+
+            // Nullable FK, but we still store it while product exists.
+            ProductId = product.Id,
+
+            ProductName = product.Name,
+            MeasureCount = purchasedMeasureCount,
+            MeasureUnit = product.Measure.Unit,
+            SpentAmount = spentAmount,
+            Shop = product.Shop,
+        };
     }
 }

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebApp.Controllers.DTOs;
+namespace WebApp.DTOs;
 
 public class UserLoginDto
 {

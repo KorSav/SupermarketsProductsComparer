@@ -14,6 +14,3 @@ public sealed record ProductListViewModel(IReadOnlyList<ProductListEntryViewMode
     public bool IsEmpty => Entries.Count == 0;
 }
 
-public sealed record UpdateProductListEntryAmountRequest(decimal Amount);
-
-public sealed record AddProductListEntryRequest(Guid ProductId, decimal Amount);

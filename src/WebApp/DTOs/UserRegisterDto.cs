@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using FoolProof.Core;
 
-namespace WebApp.Controllers.DTOs;
+namespace WebApp.DTOs;
 
 public class UserRegisterDto
 {

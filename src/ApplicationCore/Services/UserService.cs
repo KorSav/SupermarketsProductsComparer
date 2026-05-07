@@ -5,9 +5,9 @@ namespace ApplicationCore.Services;
 
 public class UserService(IUserRepository userRepo)
 {
-    public async Task<Result<User>> TryRegisterAsync(string name, string surname, string password)
+    public async Task<Result<User>> TryRegisterAsync(string name, string email, string password)
     {
-        User? existingUser = await userRepo.FindByNameAndSurnameAsync(name, surname);
+        User? existingUser = await userRepo.FindByNameAndEmailAsync(name, email);
         if (existingUser is not null)
             return Result.Failure(
                 new TypedError<User>(
@@ -19,12 +19,12 @@ public class UserService(IUserRepository userRepo)
                     "User with given name and surname pair already exists"
                 )
             );
-        return await userRepo.RegisterNewAsync(name, surname, password);
+        return await userRepo.RegisterNewAsync(name, email, password);
     }
 
-    public async Task<Result<User>> TryLoginAsync(string name, string surname, string password)
+    public async Task<Result<User>> TryLoginAsync(string name, string email, string password)
     {
-        User? existing = await userRepo.FindByNameAndSurnameAsync(name, surname);
+        User? existing = await userRepo.FindByNameAndEmailAsync(name, email);
         if (existing is null)
             return Result.Failure(
                 new TypedError<User>(

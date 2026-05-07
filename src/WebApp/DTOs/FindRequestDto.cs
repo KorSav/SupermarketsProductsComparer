@@ -1,6 +1,6 @@
 using ApplicationCore.Entities.Request;
 
-namespace WebApp.Controllers.DTOs;
+namespace WebApp.DTOs;
 
 public record FindRequestDto(
     string Find = "",

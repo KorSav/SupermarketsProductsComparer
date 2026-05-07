@@ -1,7 +1,8 @@
 using System.Globalization;
 using ApplicationCore.Entities.Product;
+using ApplicationCore.Entities.Request;
 
-namespace WebApp.Controllers.Mappings;
+namespace WebApp.Mappings;
 
 public static class LocalizedToStringExtensions
 {
@@ -27,6 +28,15 @@ public static class LocalizedToStringExtensions
             Shop.Silpo => "Сільпо",
             Shop.Fora => "Фора",
             Shop.Fozzy => "Фоззі",
+            _ => throw new NotImplementedException(),
+        };
+
+    public static string ToLocalString(this SortBy sortBy) =>
+        sortBy switch
+        {
+            SortBy.Name => "назвою",
+            SortBy.UnifiedPrice => "загальною ціною",
+            SortBy.Price => "ціною",
             _ => throw new NotImplementedException(),
         };
 
