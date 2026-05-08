@@ -85,10 +85,12 @@ public sealed class EfProductListService(AppDbContext dbContext) : IProductListS
         if (!productExists)
             throw new KeyNotFoundException("Product was not found.");
 
-        EfProductListEntry? existingEntry = await dbContext.ProductListEntries.FirstOrDefaultAsync(
-            x => x.ProductListId == list.Id && x.ProductId == productId,
-            cancellationToken
-        );
+        EfProductListEntry? existingEntry = await dbContext
+            .ProductListEntries.AsTracking()
+            .FirstOrDefaultAsync(
+                x => x.ProductListId == list.Id && x.ProductId == productId,
+                cancellationToken
+            );
 
         if (existingEntry is not null)
         {
@@ -119,19 +121,12 @@ public sealed class EfProductListService(AppDbContext dbContext) : IProductListS
         CancellationToken cancellationToken
     )
     {
-        EfProductListEntry? entry = await dbContext
-            .ProductListEntries.Include(x => x.ProductList)
-            .FirstOrDefaultAsync(
-                x => x.Id == entryId && x.ProductList.UserId == userId,
-                cancellationToken
-            );
+        int deletedCount = await dbContext
+            .ProductListEntries.Where(x => x.Id == entryId && x.ProductList.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
 
-        if (entry is null)
+        if (deletedCount == 0)
             throw new InvalidOperationException("Product list entry was not found.");
-
-        dbContext.ProductListEntries.Remove(entry);
-
-        await dbContext.SaveChangesAsync(cancellationToken);
 
         return await GetCurrentAsync(userId, cancellationToken);
     }
@@ -149,19 +144,15 @@ public sealed class EfProductListService(AppDbContext dbContext) : IProductListS
                 "Amount must be greater than zero."
             );
 
-        EfProductListEntry? entry = await dbContext
-            .ProductListEntries.Include(x => x.ProductList)
-            .FirstOrDefaultAsync(
-                x => x.Id == entryId && x.ProductList.UserId == userId,
+        int updatedCount = await dbContext
+            .ProductListEntries.Where(x => x.Id == entryId && x.ProductList.UserId == userId)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(x => x.Amount, amount),
                 cancellationToken
             );
 
-        if (entry is null)
+        if (updatedCount == 0)
             throw new InvalidOperationException("Product list entry was not found.");
-
-        entry.Amount = amount;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
 
         return await GetCurrentAsync(userId, cancellationToken);
     }
@@ -178,7 +169,8 @@ public sealed class EfProductListService(AppDbContext dbContext) : IProductListS
 
         EfProductList list =
             await dbContext
-                .ProductLists.Include(x => x.Entries)
+                .ProductLists.AsNoTracking()
+                .Include(x => x.Entries)
                 .ThenInclude(x => x.Product)
                 .ThenInclude(x => x.PriceHistory)
                 .AsSplitQuery()
@@ -188,14 +180,16 @@ public sealed class EfProductListService(AppDbContext dbContext) : IProductListS
         if (list.Entries.Count == 0)
             throw new InvalidOperationException("Product list is empty.");
 
-        List<EfPurchaseEntry> purchaseEntries = list.Entries.Select(ToPurchaseEntry).ToList();
-
         Guid purchaseId = Guid.NewGuid();
 
-        foreach (EfPurchaseEntry entry in purchaseEntries)
-        {
-            entry.PurchaseId = purchaseId;
-        }
+        List<EfPurchaseEntry> purchaseEntries = list
+            .Entries.Select(entry =>
+            {
+                EfPurchaseEntry purchaseEntry = ToPurchaseEntry(entry);
+                purchaseEntry.PurchaseId = purchaseId;
+                return purchaseEntry;
+            })
+            .ToList();
 
         EfPurchase purchase = new()
         {
@@ -207,9 +201,13 @@ public sealed class EfProductListService(AppDbContext dbContext) : IProductListS
         };
 
         dbContext.Purchases.Add(purchase);
-        dbContext.ProductListEntries.RemoveRange(list.Entries);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await dbContext
+            .ProductListEntries.Where(x => x.ProductListId == list.Id)
+            .ExecuteDeleteAsync(cancellationToken);
+
         await transaction.CommitAsync(cancellationToken);
 
         return purchaseId;
@@ -220,10 +218,9 @@ public sealed class EfProductListService(AppDbContext dbContext) : IProductListS
         CancellationToken cancellationToken
     )
     {
-        EfProductList? existingList = await dbContext.ProductLists.FirstOrDefaultAsync(
-            x => x.UserId == userId,
-            cancellationToken
-        );
+        EfProductList? existingList = await dbContext
+            .ProductLists.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
 
         if (existingList is not null)
             return existingList;
@@ -262,7 +259,6 @@ public sealed class EfProductListService(AppDbContext dbContext) : IProductListS
         {
             Id = Guid.NewGuid(),
 
-            // Nullable FK, but we still store it while product exists.
             ProductId = product.Id,
 
             ProductName = product.Name,

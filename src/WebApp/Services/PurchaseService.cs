@@ -2,6 +2,7 @@ using ApplicationCore.Entities.Product;
 using ApplicationCore.Entities.Request;
 using ApplicationCore.Utils;
 using Infrastructure.Repository;
+using Infrastructure.Repository.Entities;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Models;
 
@@ -28,9 +29,7 @@ public sealed class EfPurchasesService(AppDbContext dbContext) : IPurchasesServi
     {
         PurchasesQuery normalizedQuery = NormalizeQuery(query);
 
-        IQueryable<Infrastructure.Repository.Entities.EfPurchase> purchases = dbContext
-            .Purchases.Include(x => x.Entries)
-            .Where(x => x.UserId == userId);
+        var purchases = dbContext.Purchases.AsNoTracking().Where(x => x.UserId == userId);
 
         if (normalizedQuery.DateFrom is not null)
         {
@@ -89,11 +88,10 @@ public sealed class EfPurchasesService(AppDbContext dbContext) : IPurchasesServi
 
     public async Task RemoveAsync(Guid userId, Guid purchaseId, CancellationToken cancellationToken)
     {
-        Infrastructure.Repository.Entities.EfPurchase? purchase =
-            await dbContext.Purchases.FirstOrDefaultAsync(
-                x => x.Id == purchaseId && x.UserId == userId,
-                cancellationToken
-            );
+        EfPurchase? purchase = await dbContext
+            .Purchases.AsTracking()
+            .Include(x => x.Entries)
+            .FirstOrDefaultAsync(x => x.Id == purchaseId && x.UserId == userId, cancellationToken);
 
         if (purchase is null)
             throw new InvalidOperationException("Purchase was not found.");
@@ -103,8 +101,8 @@ public sealed class EfPurchasesService(AppDbContext dbContext) : IPurchasesServi
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private static IQueryable<Infrastructure.Repository.Entities.EfPurchase> ApplySorting(
-        IQueryable<Infrastructure.Repository.Entities.EfPurchase> purchases,
+    private static IQueryable<EfPurchase> ApplySorting(
+        IQueryable<EfPurchase> purchases,
         PurchasesQuery query
     )
     {
