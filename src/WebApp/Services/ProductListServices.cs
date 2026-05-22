@@ -261,7 +261,7 @@ public sealed class EfProductListService(AppDbContext dbContext) : IProductListS
 
             ProductId = product.Id,
 
-            ProductName = product.Name,
+            ProductName = product.DisplayName,
             MeasureCount = purchasedMeasureCount,
             MeasureUnit = product.Measure.Unit,
             SpentAmount = spentAmount,

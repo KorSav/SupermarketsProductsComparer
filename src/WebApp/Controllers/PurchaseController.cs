@@ -27,7 +27,7 @@ public sealed class PurchasesController : Controller
 
         var page = await _purchasesService.FindPageAsync(userId, query, cancellationToken);
 
-        PurchasesViewModel model = new(page, query, page.PagesCount, page.PagesCount);
+        PurchasesViewModel model = new(page, query, page.TotalItems, page.PagesCount);
 
         return View(model);
     }
