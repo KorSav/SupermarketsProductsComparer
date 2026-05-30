@@ -139,7 +139,7 @@
         <div class="col-12 col-lg-4">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white py-3 border-bottom-0">
-                    <h1 id="product-name" class="h4 mb-0 fw-bold text-dark"></h1>
+                    <div id="product-name" class="h4 mb-0 fw-bold text-dark"></div>
                 </div>
                 <div class="card-body d-flex flex-column gap-3">
                     <div class="rounded-4 bg-light d-flex align-items-center justify-content-center p-3">
@@ -195,7 +195,7 @@
                                 <!-- Налаштування -->
                                 <div class="col-12 col-xl-5">
                                     <div class="mb-3">
-                                        <label class="form-label small fw-bold text-muted">ОБЕРІТЬ МАГАЗИН</label>
+                                        <div class="form-label small fw-bold text-muted">ОБЕРІТЬ МАГАЗИН</div>
                                         <div id="shop-buttons" class="btn-group w-100 shadow-sm" role="group"></div>
                                     </div>
 
@@ -205,7 +205,7 @@
                                     </div>
 
                                     <div>
-                                        <label class="form-label small fw-bold text-muted">ТИП ГРАФІКА</label>
+                                        <div class="form-label small fw-bold text-muted">ТИП ГРАФІКА</div>
                                         <div class="btn-group w-100" role="group">
                                             <input type="radio" class="btn-check" name="mode" id="mode-amount" value="amount" checked>
                                             <label class="btn btn-outline-secondary" for="mode-amount">Ціна за упаковку</label>
@@ -241,7 +241,7 @@
         </div>
     </div>
 
-    <!-- Схожі пропозиції -->
+    @* <!-- Схожі пропозиції -->
     <div class="mt-5">
         <div class="d-flex align-items-center justify-content-between mb-4">
             <h2 class="h4 mb-0 fw-bold">Схожі пропозиції</h2>
@@ -303,7 +303,7 @@
                 }
             </div>
         }
-    </div>
+    </div> *@
 
     @if (isAuthenticated)
     {

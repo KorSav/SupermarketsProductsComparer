@@ -1,9 +1,9 @@
 using System.Linq.Expressions;
 using ApplicationCore;
 using ApplicationCore.DTOs;
+using ApplicationCore.Entities.Product;
 using ApplicationCore.Entities.Request;
 using Microsoft.EntityFrameworkCore;
-using CoreProduct = ApplicationCore.Entities.Product.Product;
 
 namespace Infrastructure.Repository;
 
@@ -17,7 +17,7 @@ internal class ProductRepository(AppDbContext dbContext) : IProductRepository
     public async Task<IBulkUpsertScope> BeginBulkUpsertAsync(CancellationToken ct) =>
         await BulkUpsertScope.CreateNewAsync(dbContext, ct);
 
-    public async Task<PageResultDto<CoreProduct>> FindPageByQueryAsync(
+    public async Task<PageResultDto<Product>> FindPageByQueryAsync(
         ProductPageQueryDto query,
         CancellationToken cancellationToken
     )
@@ -25,6 +25,7 @@ internal class ProductRepository(AppDbContext dbContext) : IProductRepository
         var queriable = dbContext.Products.Include(e => e.PriceHistory).AsQueryable();
         if (query.Request.ApplySearchString)
         {
+            var normalizedName = Product.NormalizeName(query.Request.SearchString);
             var words = query.Request.SearchString.Split(
                 ' ',
                 StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries
@@ -60,7 +61,7 @@ internal class ProductRepository(AppDbContext dbContext) : IProductRepository
         var items = await queriable.ToListAsync(cancellationToken);
 
         var coreItems = items.Select(e => e.ToCoreProduct()).ToArray();
-        return new PageResultDto<CoreProduct>(coreItems, total);
+        return new PageResultDto<Product>(coreItems, total);
     }
 }
 

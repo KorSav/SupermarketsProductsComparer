@@ -18,7 +18,7 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            var result = await service.TryRegisterAsync("user name", "user surname", "P@ssw0rd");
+            var result = await service.TryRegisterAsync("user name", "user@email.com", "P@ssw0rd");
             registered = result.Value!;
         }
 
@@ -39,7 +39,7 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            var result = await service.TryRegisterAsync("user name", "user surname", "P@ssw0rd");
+            var result = await service.TryRegisterAsync("user name", "user@email.com", "P@ssw0rd");
             registered = result.Value!;
         }
 
@@ -48,13 +48,13 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            loginResult = await service.TryRegisterAsync("user name", "user surname", "P@ssw0rd");
+            loginResult = await service.TryRegisterAsync("user name", "user@email.com", "P@ssw0rd");
         }
 
         // Assert
         Assert.False(loginResult.IsSuccess);
         var actReasons = loginResult.ErrorList.Select(e => e.Reason).ToList();
-        Assert.Equivalent(new[] { "Name", "Surname" }, actReasons, strict: true);
+        Assert.Equivalent(new[] { "Name", "Email" }, actReasons, strict: true);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            var result = await service.TryRegisterAsync("user name", "user surname", "P@ssw0rd");
+            var result = await service.TryRegisterAsync("user name", "user@email.com", "P@ssw0rd");
             registered = result.Value!;
         }
 
@@ -74,7 +74,7 @@ public class UserServiceTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         await using (var scope = Services.CreateAsyncScope())
         {
             var service = scope.ServiceProvider.GetRequiredService<UserService>();
-            loginResult = await service.TryLoginAsync("user name", "user surname", "P@ssw0rd");
+            loginResult = await service.TryLoginAsync("user name", "user@email.com", "P@ssw0rd");
         }
 
         // Assert

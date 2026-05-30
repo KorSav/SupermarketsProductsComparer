@@ -67,6 +67,7 @@ public class RepositoryFreshUpService(
                 await bulkScope.UpsertAsync(bulk, ct);
                 logger.LogInformation("{Iteration}). Saved {Count} new products", i++, bulk.Count);
                 bulk.Clear();
+                bulk.Add(product);
             }
             if (bulk.Count > 0)
             {

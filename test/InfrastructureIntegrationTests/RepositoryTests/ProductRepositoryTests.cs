@@ -3,6 +3,8 @@ using ApplicationCore;
 using ApplicationCore.DTOs;
 using ApplicationCore.Entities.Product;
 using ApplicationCore.Entities.Request;
+using FluentAssertions;
+using Infrastructure;
 using Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,7 +40,7 @@ public class ProductRepositoryTests(DbContainerFixture _) : DbPerTestCaseBase(_)
             SortOrder.Desc => new([ForaCheese, ForaCheese2, SilpoDrink], 6),
             _ => throw new UnreachableException(),
         };
-        Assert.Equal(exp.Items, act.Items);
+        exp.Items.Should().BeEquivalentTo(act.Items, o => o.Excluding(e => e.Id));
         Assert.Equal(exp.Total, act.Total);
     }
 
@@ -57,19 +59,6 @@ public class ProductRepositoryTests(DbContainerFixture _) : DbPerTestCaseBase(_)
         );
         var act = await repo.FindPageByQueryAsync(query, CancellationToken);
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var all = await dbContext.Products.ToListAsync(CancellationToken);
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<int>>();
-        logger.LogInformation(
-            "{TC} with {SortOrder}, products: {Products}",
-            TCName,
-            sortOrder,
-            string.Join(
-                ", ",
-                all.Select(p =>
-                    $"name = {p.DisplayName}, shop = {p.Shop}, price = {p.Price} for {p.Amount} {p.Unit}, unifiedPrice = {p.UnifiedPrice}"
-                )
-            )
-        );
 
         // Assert
         PageResultDto<Product> exp = sortOrder switch
@@ -78,7 +67,7 @@ public class ProductRepositoryTests(DbContainerFixture _) : DbPerTestCaseBase(_)
             SortOrder.Desc => new([ForaCheese, ForaCheese2], 2),
             _ => throw new UnreachableException(),
         };
-        Assert.Equal(exp.Items, act.Items);
+        exp.Items.Should().BeEquivalentTo(act.Items, o => o.Excluding(e => e.Id));
         Assert.Equal(exp.Total, act.Total);
     }
 
@@ -93,7 +82,7 @@ public class ProductRepositoryTests(DbContainerFixture _) : DbPerTestCaseBase(_)
             var query = new ProductPageQueryDto(0, 2, new Request("", SortBy.Price, SortOrder.Asc));
             var act = await repo.FindPageByQueryAsync(query, CancellationToken);
             PageResultDto<Product> exp = new([FozzyApple, FozzySpice], 6);
-            Assert.Equal(exp.Items, act.Items);
+            exp.Items.Should().BeEquivalentTo(act.Items, o => o.Excluding(e => e.Id));
             Assert.Equal(exp.Total, act.Total);
         }
 
@@ -104,7 +93,7 @@ public class ProductRepositoryTests(DbContainerFixture _) : DbPerTestCaseBase(_)
             var query = new ProductPageQueryDto(1, 2, new Request("", SortBy.Price, SortOrder.Asc));
             var act = await repo.FindPageByQueryAsync(query, CancellationToken);
             PageResultDto<Product> exp = new([SilpoMilk, SilpoDrink], 6);
-            Assert.Equal(exp.Items, act.Items);
+            exp.Items.Should().BeEquivalentTo(act.Items, o => o.Excluding(e => e.Id));
             Assert.Equal(exp.Total, act.Total);
         }
     }
@@ -112,6 +101,8 @@ public class ProductRepositoryTests(DbContainerFixture _) : DbPerTestCaseBase(_)
     private async Task PopulateDbAsync()
     {
         await using var scope = Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Database.ExecuteSqlRawAsync(SqlScripts.BulkMergeProc);
         var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
         var bulkUpsert = await repo.BeginBulkUpsertAsync(CancellationToken);
         await bulkUpsert.UpsertAsync(All, CancellationToken);

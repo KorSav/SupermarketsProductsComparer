@@ -28,7 +28,10 @@ public class SilpoDataRetriever(
         var requestMsg = NewRequestForQuery(searchQuery, limit, 0);
         var responseMsg = await _httpClient.SendAsync(requestMsg, cancellationToken);
         var response = await responseMsg.Content.ReadAsStreamAsync(cancellationToken);
-        using JsonDocument jsonDocument = JsonDocument.Parse(response);
+        using JsonDocument jsonDocument = await JsonDocument.ParseAsync(
+            response,
+            cancellationToken: cancellationToken
+        );
         var products = jsonDocument
             .RootElement.GetProperty("items")
             .Deserialize<List<SilpoProduct>>(_jsonSerializerOptions);

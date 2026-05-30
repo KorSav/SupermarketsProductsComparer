@@ -74,13 +74,19 @@ public class ProductsController(ProductService productService, AppDbContext dbCo
             var product = efProduct.ToCoreProduct();
             var unifiedProduct = product.WithUnifiedPrice();
 
-            var mockPriceHistory = GenerateMockPriceHistory(
-                product.Id,
-                product.Price,
-                product.Measure
-            );
+            var priceHistoryEntries = efProduct
+                .PriceHistory.OrderBy(h => h.ParsedAt)
+                .Select(h => new PriceEntry(
+                    Price: h.Price,
+                    UnifiedPrice: h.UnifiedPrice,
+                    Date: h.ParsedAt
+                ))
+                .ToList();
 
-            var averagePrice = mockPriceHistory.History.Average(e => e.Price);
+            var averagePrice =
+                priceHistoryEntries.Count == 0
+                    ? product.Price
+                    : priceHistoryEntries.Average(e => e.Price);
 
             productDetails.Add(
                 new ProductDetail(
@@ -97,7 +103,7 @@ public class ProductsController(ProductService productService, AppDbContext dbCo
                 )
             );
 
-            priceHistories.Add(mockPriceHistory);
+            priceHistories.Add(new PriceHistory(efProduct.Id, priceHistoryEntries));
         }
 
         var requestedCoreProduct = requestedProduct.ToCoreProduct();
@@ -110,6 +116,7 @@ public class ProductsController(ProductService productService, AppDbContext dbCo
         );
 
         var filterGroupName = requestedCoreProduct.NormalizedName;
+
         ProductViewModel model = new(
             productDetails,
             priceHistories,

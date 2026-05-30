@@ -23,7 +23,7 @@ public static partial class RatioParser
             "г" => MeasureUnit.Gram,
             "л" => MeasureUnit.Litre,
             "мл" => MeasureUnit.MiliLitre,
-            "шт" or "бух" => MeasureUnit.Count, // буханка
+            "шт" or "бух" or "уп" => MeasureUnit.Count,
             "м" => MeasureUnit.Meter,
             _ => throw new ArgumentException(
                 $"Unknown literal '{unitStr}' from '{ratio}' to specify amount '{amount}' of '{unitStr}' qualifier"

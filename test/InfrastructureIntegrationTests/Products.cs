@@ -6,7 +6,9 @@ public static class Products
 {
     public static Product FozzyApple =>
         new(
-            Name: "Apple 🍎, 500г",
+            Id: Guid.NewGuid(),
+            Name: "Apple 🍎",
+            NameSuffix: ", 500г",
             Measure: new(500, MeasureUnit.Gram),
             Price: 15,
             LinkImage: new Uri("https://image-stock.com/guid"),
@@ -15,7 +17,9 @@ public static class Products
         );
     public static Product FozzySpice =>
         new(
-            Name: "Some spice, 10г",
+            Guid.NewGuid(),
+            Name: "Some spice",
+            NameSuffix: ", 10г",
             Measure: new(10, MeasureUnit.Gram),
             Price: 20,
             LinkImage: new Uri("https://fozzy-images.com/2"),
@@ -24,7 +28,9 @@ public static class Products
         );
     public static Product FozzySpiceDup =>
         new(
-            Name: "Some spice, 10г",
+            Guid.NewGuid(),
+            Name: "Some spice",
+            NameSuffix: ", 10г",
             Measure: new(10, MeasureUnit.Gram),
             Price: 20,
             LinkImage: new Uri("https://fozzy-images.com/2"),
@@ -33,7 +39,9 @@ public static class Products
         );
     public static Product SilpoMilk =>
         new(
-            Name: "Молоко, 1л",
+            Guid.NewGuid(),
+            Name: "Молоко",
+            NameSuffix: ", 1л",
             Measure: new(1, MeasureUnit.Litre),
             Price: 30,
             LinkImage: new Uri("https://silpo-images.com/1"),
@@ -42,7 +50,9 @@ public static class Products
         );
     public static Product SilpoDrink =>
         new(
-            Name: "Напій juice, 200мл",
+            Guid.NewGuid(),
+            Name: "Напій juice",
+            NameSuffix: ", 200мл",
             Measure: new(200, MeasureUnit.MiliLitre),
             Price: 32,
             LinkImage: new Uri("https://image-stock.com/guid2"),
@@ -51,7 +61,9 @@ public static class Products
         );
     public static Product ForaCheese =>
         new(
-            Name: "Сир гол., 300г",
+            Guid.NewGuid(),
+            Name: "Сир гол.",
+            NameSuffix: ", 300г",
             Measure: new(300, MeasureUnit.Gram),
             Price: 120,
             LinkImage: new Uri("https://fora-images.com/2"),
@@ -60,7 +72,9 @@ public static class Products
         );
     public static Product ForaCheese2 =>
         new(
-            Name: "Сир гол., 1кг",
+            Guid.NewGuid(),
+            Name: "Сир гол.",
+            NameSuffix: ", 1кг",
             Measure: new(1, MeasureUnit.KiloGram),
             Price: 360,
             LinkImage: new Uri("https://image-stock.com/3"),

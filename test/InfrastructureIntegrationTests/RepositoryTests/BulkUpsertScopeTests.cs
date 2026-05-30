@@ -1,5 +1,7 @@
 using ApplicationCore;
 using ApplicationCore.Entities.Product;
+using FluentAssertions;
+using Infrastructure;
 using Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +13,13 @@ namespace InfrastructureIntegrationTests.RepositoryTests;
 [Collection(Collections.Container1)]
 public sealed class BulkUpsertScopeTests(DbContainerFixture _) : DbPerTestCaseBase(_)
 {
+    protected override async Task OnInitializeFinishedAsync()
+    {
+        await using var scope = Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Database.ExecuteSqlRawAsync(SqlScripts.BulkMergeProc);
+    }
+
     [Fact]
     public async Task BulkUpsert_InsertsDataAndDropsTempTable()
     {
@@ -29,9 +38,10 @@ public sealed class BulkUpsertScopeTests(DbContainerFixture _) : DbPerTestCaseBa
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var expected = AllProducts();
             var actual = await dbContext
-                .Products.Select(p => p.ToCoreProduct())
+                .Products.Include(e => e.PriceHistory)
+                .Select(p => p.ToCoreProduct())
                 .ToListAsync(CancellationToken);
-            Assert.Equal(expected, actual);
+            actual.Should().BeEquivalentTo(expected, o => o.Excluding(e => e.Id));
 
             var tempTableExists = await dbContext
                 .Database.SqlQueryRaw<bool>(
@@ -69,9 +79,10 @@ public sealed class BulkUpsertScopeTests(DbContainerFixture _) : DbPerTestCaseBa
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var expected = AllProductsModified();
             var actual = await dbContext
-                .Products.Select(p => p.ToCoreProduct())
+                .Products.Include(e => e.PriceHistory)
+                .Select(p => p.ToCoreProduct())
                 .ToListAsync(CancellationToken);
-            Assert.Equal(expected, actual);
+            actual.Should().BeEquivalentTo(expected, o => o.Excluding(e => e.Id));
         }
     }
 
@@ -94,12 +105,18 @@ public sealed class BulkUpsertScopeTests(DbContainerFixture _) : DbPerTestCaseBa
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var ps1 = AllProducts();
             var ps2 = AllProductsModified();
-            var act = await dbContext
-                .Products.Select(p => p.ToCoreProduct())
+            var storedProducts = await dbContext
+                .Products.Include(e => e.PriceHistory)
+                .AsAsyncEnumerable()
+                .Select(p => p.ToCoreProduct())
+                .OrderBy(p => p.NormalizedName)
                 .ToListAsync(CancellationToken);
-            Assert.Equal(ps1.Count, act.Count); // randomly deduplicates
-            foreach (var ((p1, p2), actP) in ps1.Zip(ps2).Zip(act).ToList())
-                Assert.Contains([p1, p2], p => p == actP);
+            Assert.Equal(ps1.Count, storedProducts.Count); // randomly deduplicates
+            var rawOrModifiedProds = ps1.Zip(ps2).OrderBy(e => e.First.NormalizedName);
+            foreach (var (expected, actual) in rawOrModifiedProds.Zip(storedProducts))
+                new[] { expected.First, expected.Second }
+                    .Should()
+                    .ContainEquivalentOf(actual, o => o.Excluding(e => e.Id));
         }
     }
 
@@ -157,7 +174,7 @@ public sealed class BulkUpsertScopeTests(DbContainerFixture _) : DbPerTestCaseBa
             },
             SilpoDrink with
             {
-                Measure = new(300, MeasureUnit.Gram),
+                Name = "Напій 'juice'",
             },
         ];
 

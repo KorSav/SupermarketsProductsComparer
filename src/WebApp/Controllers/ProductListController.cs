@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using WebApp.DTOs;
 using WebApp.Models;
 using WebApp.Services;
@@ -33,6 +34,14 @@ public sealed class ProductListController(IProductListService productListService
         CancellationToken cancellationToken
     )
     {
+        if (!ModelState.IsValid)
+            return BadRequest(
+                new
+                {
+                    success = false,
+                    message = $"One or more model errors: {string.Join('\n', ModelState.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}",
+                }
+            );
         if (request.ProductId == Guid.Empty)
         {
             return BadRequest(new { success = false, message = "Product id can't be empty guid." });
@@ -86,6 +95,14 @@ public sealed class ProductListController(IProductListService productListService
         CancellationToken cancellationToken
     )
     {
+        if (!ModelState.IsValid)
+            return BadRequest(
+                new
+                {
+                    success = false,
+                    message = $"One or more model errors: {string.Join('\n', ModelState.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}",
+                }
+            );
         if (request.Amount <= 0)
         {
             return BadRequest(
@@ -121,6 +138,14 @@ public sealed class ProductListController(IProductListService productListService
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveEntry(Guid entryId, CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(
+                new
+                {
+                    success = false,
+                    message = $"One or more model errors: {string.Join('\n', ModelState.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}",
+                }
+            );
         Guid userId = GetUserId();
 
         ProductListViewModel updatedModel = await _productListService.RemoveEntryAsync(

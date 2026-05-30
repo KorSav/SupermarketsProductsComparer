@@ -1,7 +1,6 @@
 using Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using static Infrastructure.RemoveItAndUseSeparateFile;
 
 namespace Infrastructure;
 
@@ -26,13 +25,14 @@ public static class ServiceProviderExtensions
                 "There are pending migrations, DB has old state. Please apply migrations using 'dotnet ef database update'"
             );
         }
-        await ctx.Database.ExecuteSqlRawAsync(SQL);
+        await ctx.Database.ExecuteSqlRawAsync(SqlScripts.BulkMergeProc);
     }
 }
 
-file static class RemoveItAndUseSeparateFile
+// better remove into separate file
+internal static class SqlScripts
 {
-    public static string SQL = """
+    public static readonly string BulkMergeProc = """
         CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
         CREATE OR REPLACE PROCEDURE public.merge_bulk_products_from_stage()

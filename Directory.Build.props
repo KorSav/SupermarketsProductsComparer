@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <AssemblyName>ProductPriceMonitoring.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>ProductPriceMonitoring.$(MSBuildProjectName)</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup Condition="!$(MSBuildProjectName.EndsWith('Tests'))">
+    <InternalsVisibleTo Include="ProductPriceMonitoring.$(MSBuildProjectName)Tests" />
+    <InternalsVisibleTo Include="ProductPriceMonitoring.$(MSBuildProjectName)IntegrationTests" />
+  </ItemGroup>
+</Project>
