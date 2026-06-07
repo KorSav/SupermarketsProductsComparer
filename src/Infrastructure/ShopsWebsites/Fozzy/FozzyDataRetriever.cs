@@ -3,7 +3,6 @@ using ApplicationCore.Entities.Product;
 using HtmlAgilityPack;
 using HtmlAgilityPack.CssSelectors.NetCore;
 using Infrastructure.ShopsWebsites.Exceptions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -15,21 +14,14 @@ public partial class FozzyDataRetriever : IShopDataRetriever, IDisposable
 {
     private ChromeDriver _driver;
     private int _remainingProducts;
-    private TimeSpan _paginationDelay;
     private string _productNameToSearch = null!;
-    private readonly IOptionsSnapshot<FozzyDataRetrieverOptions> _options;
-    private ShopDataRetrieverOptions Options => _options.Value;
+    private readonly IOptionsMonitor<FozzyDataRetrieverOptions> _options;
+    private FozzyDataRetrieverOptions Options => _options.Get(Shop.Fozzy.ToString());
 
-    public FozzyDataRetriever(
-        IOptionsSnapshot<FozzyDataRetrieverOptions> options,
-        IConfiguration configuration
-    )
+    public FozzyDataRetriever(IOptionsMonitor<FozzyDataRetrieverOptions> options)
     {
         _options = options;
         _driver = CreateWebDriver();
-        _paginationDelay = TimeSpan.FromSeconds(
-            configuration.GetRequiredSection("Delays:PaginationSecs").Get<double>()
-        );
     }
 
     private static ChromeDriver CreateWebDriver()
@@ -129,7 +121,7 @@ public partial class FozzyDataRetriever : IShopDataRetriever, IDisposable
                     break;
                 }
             }
-            await Task.Delay(_paginationDelay);
+            await Task.Delay(Options.PaginationDelay);
             htmlDoc = await GetHtmlDocument(currentPage++);
         }
         return retrievedProducts;
