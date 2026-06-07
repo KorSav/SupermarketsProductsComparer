@@ -13,10 +13,10 @@ namespace Infrastructure.Repository;
 
 internal class UserRepository(AppDbContext dbContext) : IUserRepository
 {
-    public async Task<User?> FindByNameAndSurnameAsync(string name, string surname)
+    public async Task<User?> FindByNameAndEmailAsync(string name, string email)
     {
         var existing = await dbContext.Users.FirstOrDefaultAsync(e =>
-            e.Name == name && e.Surname == surname
+            e.Name == name && e.Email == email
         );
         return existing?.ToUser();
     }
@@ -35,13 +35,13 @@ internal class UserRepository(AppDbContext dbContext) : IUserRepository
         };
     }
 
-    public async Task<User> RegisterNewAsync(string name, string surname, string password)
+    public async Task<User> RegisterNewAsync(string name, string email, string password)
     {
         try
         {
             var hasher = new PasswordHasher<string>();
             var passwordHash = hasher.HashPassword(user: "", password);
-            EfUser registered = new(name, surname, passwordHash);
+            EfUser registered = new(name, email, passwordHash);
             dbContext.Add(registered);
             await dbContext.SaveChangesAsync();
             return registered.ToUser();

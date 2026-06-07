@@ -8,7 +8,7 @@ namespace Infrastructure.Repository;
 
 internal class BulkUpsertScope : IBulkUpsertScope
 {
-    internal const string TempTableName = "bulk_insert_table"; // just to test it is dropped
+    internal const string TempTableName = "bulk_product_stage"; // just to test it is dropped
     private bool _terminated = false;
     private readonly AppDbContext _dbContext;
 
@@ -25,6 +25,8 @@ internal class BulkUpsertScope : IBulkUpsertScope
             CREATE TEMP TABLE {TempTableName} (
                 shop text,
                 name text,
+                name_suffix text,
+                normalized_name text,
                 price numeric(8,2),
                 unified_price numeric(8,2),
                 amount numeric(10,4),
@@ -64,12 +66,7 @@ internal class BulkUpsertScope : IBulkUpsertScope
         try
         {
             await _dbContext.Database.ExecuteSqlRawAsync(
-                $"""
-                TRUNCATE TABLE "Products" RESTART IDENTITY;
-                INSERT INTO "Products"("Shop", "Name", "Price", "UnifiedPrice", "Amount", "Unit", "FullLinkProduct", "FullLinkImage")
-                    SELECT * FROM bulk_insert_table
-                ON CONFLICT ("Name", "Shop") DO NOTHING
-                """, // FIXME: random deduplication
+                "CALL public.merge_bulk_products_from_stage()",
                 ct
             );
             await tx.CommitAsync(ct);
@@ -132,6 +129,8 @@ internal static class Extensions
             ',',
             p.Shop.GenericToStringCSV(),
             p.Name.ToStringCSV(),
+            p.NameSuffix.ToStringCSV(),
+            Product.NormalizeName(p.Name).ToStringCSV(),
             p.Price.GenericToStringCSV(),
             unifiedPrice.GenericToStringCSV(),
             p.Measure.Count.GenericToStringCSV(),

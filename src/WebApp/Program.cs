@@ -4,12 +4,15 @@ using DotNetEnv;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using WebApp.Services;
 
 Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IProductListService, EfProductListService>();
+builder.Services.AddScoped<IPurchasesService, EfPurchasesService>();
 
 builder
     .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -44,9 +47,9 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}");
+app.MapControllerRoute(name: "default", pattern: "{controller=Products}/{action=Index}");
 
-app.Run();
+await app.RunAsync();
 
 // file class NoOpProvider(ILogger<NoOpProvider> logger) : IShopProductProvider
 // {
@@ -56,3 +59,14 @@ app.Run();
 //         return AsyncEnumerable.Empty<Product>();
 //     }
 // }
+
+// var httpClient = new HttpClient() { BaseAddress = new Uri("http://fozzyshop.ua/") };
+
+// httpClient.DefaultRequestHeaders.Add(
+//     "User-Agent",
+//     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
+// );
+// await using var respStream = await httpClient.GetStreamAsync("/sitemap/sitemap.xml");
+
+// await using var fs = File.Create("result.html");
+// await respStream.CopyToAsync(fs);

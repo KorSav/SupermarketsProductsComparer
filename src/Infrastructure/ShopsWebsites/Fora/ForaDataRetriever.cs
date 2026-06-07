@@ -35,7 +35,10 @@ public class ForaDataRetriever : IShopDataRetriever
         var responseMsg = await _httpClient.SendAsync(requestMsg, cancellationToken);
         responseMsg.EnsureSuccessStatusCode();
         var response = await responseMsg.Content.ReadAsStreamAsync(cancellationToken);
-        using JsonDocument jsonDocument = JsonDocument.Parse(response);
+        using JsonDocument jsonDocument = await JsonDocument.ParseAsync(
+            response,
+            cancellationToken: cancellationToken
+        );
         var products = jsonDocument
             .RootElement.GetProperty("items")
             .Deserialize<List<ForaProduct>>(_jsonSerializerOptions);

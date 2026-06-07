@@ -1,0 +1,848 @@
+@model ProductViewModel
+@using System.Text.Json
+@using ApplicationCore.Entities.Product
+@using WebApp.Mappings
+
+@{
+    var json = Model.ToJson();
+    var addToListUrl = Url.Action("AddEntry", "ProductList");
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+
+    var allShopsJson = JsonSerializer.Serialize(
+        Enum.GetValues<Shop>()
+            .Select(s => new
+            {
+                Value = s.ToLocalString(),
+                Text = s.ToLocalString()
+            })
+            .ToList()
+    );
+}
+
+<style>
+    .product-main-image {
+        height: 360px;
+        object-fit: contain;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 320px;
+    }
+
+    .recommendation-image {
+        height: 135px;
+        object-fit: contain;
+        padding: .75rem;
+    }
+
+    /* Блок ціни */
+    .price-display {
+        font-size: 3rem;
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+
+    .delta-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .insight-card {
+        background-color: var(--bs-light);
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .custom-legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: .75rem;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    .legend-dot {
+        width: .75rem;
+        height: .75rem;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .legend-dot.unavailable {
+        background: transparent !important;
+        border: 2px dotted var(--bs-secondary-color);
+    }
+
+    .shop-btn.unavailable {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+
+    @@media (max-width: 991.98px) {
+        .product-main-image { height: 300px; }
+        .chart-container { height: 280px; }
+    }
+    /* The overlay layer sits over the top half of the card */
+    .compare-overlay-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 70%; /* Covers the image area */
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        z-index: 2;
+    }
+
+    /* Show on hover */
+    .custom-card-hover:hover .compare-overlay-layer {
+        opacity: 1;
+    }
+
+    /* Soften the image when hovering for better contrast */
+    .custom-card-hover:hover img {
+        opacity: 0.6;
+        transition: 0.2s;
+    }
+
+    /* Ensure the bottom button remains clickable over the stretched link */
+    .mt-auto.position-relative {
+        z-index: 5;
+    }
+</style>
+
+<div class="container py-4">
+    <!-- Пошук -->
+    <form asp-controller="Products" asp-action="Index" class="mx-auto mb-5" style="max-width: 620px;" method="get">
+        <div class="input-group input-group-lg shadow-sm">
+            <input class="form-control border-end-0" name="find" placeholder="Пошук товарів..." />
+            <button class="btn btn-primary px-4" type="submit">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </form>
+
+    <div class="row g-4 align-items-start">
+        <!-- Основна інформація про товар -->
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom-0">
+                    <div id="product-name" class="h4 mb-0 fw-bold text-dark"></div>
+                </div>
+                <div class="card-body d-flex flex-column gap-3">
+                    <div class="rounded-4 bg-light d-flex align-items-center justify-content-center p-3">
+                        <img id="product-image" class="product-main-image img-fluid" alt="" />
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a id="product-link" target="_blank" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="bi bi-cart3 me-2"></i>Перейти до магазину
+                        </a>
+                        @if (isAuthenticated)
+                        {
+                            <button id="add-to-list-open-button" type="button" class="btn btn-outline-secondary">
+                                <i class="bi bi-list-check me-2"></i>Додати до списку
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ціна та історія -->
+        <div class="col-12 col-lg-8">
+            <div class="row g-4">
+                
+                <!-- Блок ціни -->
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                <!-- Аналіз ціни -->
+                                <div class="col-12 col-xl-7 border-xl-end">
+                                    <div class="mb-2 text-muted text-uppercase small fw-bold tracking-wider">Поточна ціна</div>
+                                    <div class="d-flex flex-column gap-3 mb-3">
+                                        <span id="price" class="price-display fw-bold text-primary"></span>
+                                        <div id="delta-box">
+                                            <!-- Тут відображається порівняння з середньою ціною -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="insight-card">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-secondary small">Середня ціна в цьому магазині</span>
+                                            <strong id="avg" class="text-dark"></strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-secondary small">Зведена ціна</span>
+                                            <span id="unified-price" class="fw-semibold text-dark"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Налаштування -->
+                                <div class="col-12 col-xl-5">
+                                    <div class="mb-3">
+                                        <div class="form-label small fw-bold text-muted">ОБЕРІТЬ МАГАЗИН</div>
+                                        <div id="shop-buttons" class="btn-group w-100 shadow-sm" role="group"></div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="measure-select" class="form-label small fw-bold text-muted">РОЗМІР УПАКОВКИ</label>
+                                        <select id="measure-select" class="form-select border-2"></select>
+                                    </div>
+
+                                    <div>
+                                        <div class="form-label small fw-bold text-muted">ТИП ГРАФІКА</div>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="mode" id="mode-amount" value="amount" checked>
+                                            <label class="btn btn-outline-secondary" for="mode-amount">Ціна за упаковку</label>
+                                            
+                                            <input type="radio" class="btn-check" name="mode" id="mode-unified" value="unified">
+                                            <label class="btn btn-outline-secondary" for="mode-unified">Зведена ціна</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Історія цін -->
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
+                            <h2 class="h5 mb-0 fw-bold text-dark">Динаміка цін</h2>
+                            <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Натисніть на лінію для деталей</span>
+                        </div>
+
+                        <div class="card-body p-4 pt-0">
+                            <div class="chart-container">
+                                <canvas id="chart"></canvas>
+                            </div>
+                            <div id="chart-legend" class="custom-legend small text-secondary"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    @* <!-- Схожі пропозиції -->
+    <div class="mt-5">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h2 class="h4 mb-0 fw-bold">Схожі пропозиції</h2>
+            <hr class="flex-grow-1 ms-4 d-none d-md-block opacity-10">
+        </div>
+
+        @if (!Model.Recommended.Any())
+        {
+            <div class="alert alert-secondary mb-0" role="alert">
+                Схожих пропозицій немає, можливо вони з'являться пізніше.
+            </div>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                @foreach (var pinfo in Model.Recommended)
+                {
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 position-relative custom-card-hover">
+                        
+                        <!-- Product Image -->
+                        <div class="p-3 text-center">
+                            <img src="@pinfo.Product.LinkImage" class="img-fluid" style="height: 200px; object-fit: contain;" alt="@pinfo.Product.LinkImage">
+                        </div>
+
+                        <!-- Compare Overlay -->
+                        <div class="compare-overlay-layer d-flex align-items-center justify-content-center">
+                            <a asp-controller="Products" 
+                            asp-action="ProductDetails" 
+                            asp-route-id="@pinfo.Product.Id" 
+                            class="btn btn-primary btn-sm rounded-pill stretched-link shadow-sm compare-label">
+                                <i class="bi bi-info-circle me-2"></i>Details
+                            </a>
+                        </div>
+
+                        <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
+                            @pinfo.Product.Shop
+                        </span>
+
+                        <div class="card-body d-flex flex-column pt-0">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-primary">
+                                    @pinfo.Product.Price.ToDisplayString() грн
+                                </span>
+                                <span class="text-muted small">
+                                    @pinfo.UnifiedPrice.ToDisplayString() грн/@($"{pinfo.UnifiedMeasure.Unit.ToLocalString()}")
+                                </span>
+                            </div>
+                            <h5 class="card-title h6 mb-3">@pinfo.Product.DisplayName</h5>
+                            
+                            <div class="mt-auto position-relative" style="z-index: 3;">
+                                <a href="@pinfo.Product.LinkProduct" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                                    На сайт магазину
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+        }
+    </div> *@
+
+    @if (isAuthenticated)
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="modal fade" id="add-to-list-modal" tabindex="-1" aria-labelledby="add-to-list-title" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="add-to-list-title">Додати товар до списку</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрити"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form id="add-to-list-form">
+                            <div class="mb-3">
+                                <label for="add-to-list-amount" class="form-label">Кількість</label>
+                                <input
+                                    id="add-to-list-amount"
+                                    class="form-control"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    value="1"
+                                    required />
+                                <div class="form-text" id="add-to-list-product-name"></div>
+                            </div>
+
+                            <div id="add-to-list-error" class="alert alert-danger py-2 d-none"></div>
+                            <div id="add-to-list-success" class="alert alert-success py-2 d-none"></div>
+                        </form>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+                        <button id="add-to-list-submit-button" type="submit" form="add-to-list-form" class="btn btn-primary">
+                            Додати до списку
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const model = @Html.Raw(json);
+        const allShops = @Html.Raw(allShopsJson);
+        const productBasePath = '@Url.Content("~/products/")';
+        const addToListUrl = '@addToListUrl';
+        const isAuthenticated = @JsonSerializer.Serialize(isAuthenticated);
+
+        let currentId = model.Details[0].Id;
+        let currentShop = model.Details[0].Shop;
+        let currentMode = "amount";
+        let chart = null;
+
+        const shopColors = [
+            "rgb(220, 53, 69)",     // Bootstrap danger
+            "rgb(25, 135, 84)",     // Bootstrap success
+            "rgb(255, 193, 7)"      // Bootstrap warning
+        ];
+
+        const unavailableColor = "rgb(173, 181, 189)";
+
+        const glowPlugin = {
+            id: "activeLineGlow",
+            beforeDatasetDraw(chart, args) {
+                const dataset = chart.data.datasets[args.index];
+
+                if (!dataset.isActiveLine) {
+                    return;
+                }
+
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.shadowColor = dataset.borderColor;
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            },
+            afterDatasetDraw(chart, args) {
+                const dataset = chart.data.datasets[args.index];
+
+                if (dataset.isActiveLine) {
+                    chart.ctx.restore();
+                }
+            }
+        };
+
+        Chart.register(glowPlugin);
+
+
+        function updateBrowserPath(id) {
+            const normalizedBasePath = productBasePath.endsWith("/")
+                ? productBasePath
+                : `${productBasePath}/`;
+
+            const newPath = `${normalizedBasePath}${id}`;
+
+            if (window.location.pathname !== newPath) {
+                window.history.replaceState({ productId: id }, "", newPath);
+            }
+        }
+
+        function getDetail(id) {
+            return model.Details.find(d => d.Id === id);
+        }
+
+        function sameMeasure(a, b) {
+            return a.Amount === b.Amount && a.Unit === b.Unit;
+        }
+
+        function formatNumber(value) {
+            const number = Number(value);
+
+            return Number.isInteger(number)
+                ? number.toString()
+                : number.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+        }
+
+        function formatMeasure(measure) {
+            return `${formatNumber(measure.Amount)} ${measure.Unit}`;
+        }
+
+        function getShopIndex(shop) {
+            const index = allShops.findIndex(s => s.Value === shop || s.Text === shop);
+            return index >= 0 ? index : 0;
+        }
+
+        function getShopColor(shop, toneIndex = 0, hasData = true) {
+            if (!hasData) {
+                return unavailableColor;
+            }
+
+            const base = shopColors[getShopIndex(shop) % shopColors.length];
+
+            if (currentMode !== "unified" || toneIndex === 0) {
+                return base;
+            }
+
+            return base
+                .replace("rgb(", "rgba(")
+                .replace(")", `, ${Math.max(0.4, 1 - toneIndex * 0.22)})`);
+        }
+
+        function getShopText(shop) {
+            return allShops.find(s => s.Value === shop || s.Text === shop)?.Text ?? shop;
+        }
+
+        function getAvailableIdsForShop(shop) {
+            return model.ShopMeasureIds
+                .filter(x => x.Shop === shop)
+                .map(x => x.Id);
+        }
+
+        function updateUI() {
+            const d = getDetail(currentId);
+            currentShop = d.Shop;
+            updateBrowserPath(currentId);
+
+            document.getElementById("product-name").innerText = d.DisplayName;
+            document.getElementById("product-image").src = d.LinkImage;
+            document.getElementById("product-image").alt = d.DisplayName;
+            document.getElementById("product-link").href = d.LinkProduct;
+
+            document.getElementById("price").innerText = `${formatNumber(d.Price)} грн`;
+            document.getElementById("unified-price").innerText =
+                `(${formatNumber(d.UnifiedPrice)} за ${formatMeasure(d.UnifiedMeasure)})`;
+
+            document.getElementById("avg").innerText = `${formatNumber(d.AveragePrice)} грн`;
+
+            renderPriceComparison(d);
+            renderShops();
+            renderMeasures();
+            renderChart();
+            renderLegend();
+        }
+
+        function renderPriceComparison(d) {
+            const delta = Number(d.Price) - Number(d.AveragePrice);
+            const absDelta = Math.abs(delta);
+
+            const box = document.getElementById("delta-box");
+
+            if (Math.abs(delta) < 0.005) {
+                box.innerHTML = `
+                    <div class="alert alert-secondary py-2 px-3 mb-0 d-inline-flex align-items-center gap-2">
+                        <span>Ціна така сама, як зазвичай</span>
+                    </div>
+                `;
+                return;
+            }
+
+            if (delta < 0) {
+                box.innerHTML = `
+                    <div class="alert alert-success py-2 px-3 mb-0 d-inline-flex align-items-center gap-2">
+                        <span class="fs-4 lh-1">↓</span>
+                        <span>${formatNumber(absDelta)} грн дешевше, ніж зазвичай</span>
+                    </div>
+                `;
+            } else {
+                box.innerHTML = `
+                    <div class="alert alert-danger py-2 px-3 mb-0 d-inline-flex align-items-center gap-2">
+                        <span class="fs-4 lh-1">↑</span>
+                        <span>${formatNumber(absDelta)} грн дорожче, ніж зазвичай</span>
+                    </div>
+                `;
+            }
+        }
+
+        function renderShops() {
+            const container = document.getElementById("shop-buttons");
+            container.innerHTML = "";
+
+            allShops.forEach(shopInfo => {
+                const shop = shopInfo.Value;
+                const availableIds = getAvailableIdsForShop(shop);
+                const available = availableIds.length > 0;
+
+                const btn = document.createElement("button");
+
+                btn.type = "button";
+                btn.innerText = shopInfo.Text;
+
+                if (!available) {
+                    btn.className = "btn btn-outline-secondary shop-btn unavailable";
+                    btn.disabled = true;
+                } else if (shop === currentShop) {
+                    btn.className = "btn btn-primary shop-btn";
+                } else {
+                    btn.className = "btn btn-outline-primary shop-btn";
+                }
+
+                btn.onclick = () => {
+                    if (!available) {
+                        return;
+                    }
+
+                    currentShop = shop;
+                    currentId = availableIds[0];
+                    updateUI();
+                };
+
+                container.appendChild(btn);
+            });
+        }
+
+        function renderMeasures() {
+            const select = document.getElementById("measure-select");
+            select.innerHTML = "";
+
+            const options = model.ShopMeasureIds.filter(x => x.Shop === currentShop);
+
+            options.forEach(o => {
+                const detail = getDetail(o.Id);
+                const opt = document.createElement("option");
+
+                opt.value = o.Id;
+                opt.text = formatMeasure(detail.Measure);
+
+                if (o.Id === currentId) {
+                    opt.selected = true;
+                }
+
+                select.appendChild(opt);
+            });
+
+            select.onchange = e => {
+                currentId = e.target.value;
+                updateUI();
+            };
+        }
+
+        function getSortedDateKeys() {
+            return [
+                ...new Set(
+                    model.Chart.flatMap(h =>
+                        h.History.map(x => x.Date.substring(0, 10))
+                    )
+                )
+            ].sort();
+        }
+
+        function renderChart() {
+            const canvas = document.getElementById("chart");
+
+            const oldChart = Chart.getChart(canvas);
+            if (oldChart) {
+                oldChart.destroy();
+            }
+
+            const currentDetail = getDetail(currentId);
+            const dateKeys = getSortedDateKeys();
+
+            const labels = dateKeys.map(x => new Date(x).toLocaleDateString());
+
+            const datasets = [];
+
+            allShops.forEach(shopInfo => {
+                const shop = shopInfo.Value;
+
+                const histories = model.Chart
+                    .filter(h => getDetail(h.ProductDetailId).Shop === shop);
+
+                if (histories.length === 0) {
+                    return;
+                }
+
+                let toneIndex = 0;
+
+                histories.forEach(h => {
+                    const detail = getDetail(h.ProductDetailId);
+
+                    if (currentMode === "amount" && !sameMeasure(detail.Measure, currentDetail.Measure)) {
+                        return;
+                    }
+
+                    const valuesByDate = new Map(
+                        h.History.map(x => [
+                            x.Date.substring(0, 10),
+                            currentMode === "amount" ? Number(x.Price) : Number(x.UnifiedPrice)
+                        ])
+                    );
+
+                    const isActiveLine = h.ProductDetailId === currentId;
+
+                    datasets.push({
+                        label: getShopText(shop),
+                        productDetailId: h.ProductDetailId,
+                        data: dateKeys.map(date => valuesByDate.get(date) ?? null),
+                        borderColor: getShopColor(shop, toneIndex, true),
+                        backgroundColor: getShopColor(shop, toneIndex, true),
+                        borderWidth: isActiveLine ? 4 : 2,
+                        pointRadius: isActiveLine ? 4 : 3,
+                        pointHoverRadius: 7,
+                        tension: 0.25,
+                        spanGaps: true,
+                        isActiveLine
+                    });
+
+                    toneIndex++;
+                });
+            });
+
+            chart = new Chart(canvas, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: {
+                        mode: "nearest",
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: context => {
+                                    const dataset = context.dataset;
+                                    return `${dataset.label}: ${formatNumber(context.parsed.y)} грн`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length === 0) {
+                            return;
+                        }
+
+                        const datasetIndex = elements[0].datasetIndex;
+                        const clickedDataset = chart.data.datasets[datasetIndex];
+
+                        if (!clickedDataset.productDetailId) {
+                            return;
+                        }
+
+                        currentId = clickedDataset.productDetailId;
+                        currentShop = getDetail(currentId).Shop;
+
+                        updateUI();
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: "rgba(0,0,0,0.08)"
+                            },
+                            ticks: {
+                                font: {
+                                    size: 13
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: "rgba(0,0,0,0.08)"
+                            },
+                            ticks: {
+                                font: {
+                                    size: 13
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderLegend() {
+            const container = document.getElementById("chart-legend");
+            container.innerHTML = "";
+
+            allShops.forEach(shopInfo => {
+                const shop = shopInfo.Value;
+                const hasData = model.Chart.some(h => getDetail(h.ProductDetailId).Shop === shop);
+
+                const item = document.createElement("span");
+                item.className = "legend-item";
+
+                const dot = document.createElement("span");
+                dot.className = "legend-dot";
+
+                if (!hasData) {
+                    dot.classList.add("unavailable");
+                } else {
+                    dot.style.backgroundColor = getShopColor(shop, 0, true);
+                }
+
+                const text = document.createElement("span");
+                text.innerText = shopInfo.Text;
+
+                item.appendChild(dot);
+                item.appendChild(text);
+                container.appendChild(item);
+            });
+        }
+
+
+        if (isAuthenticated) {
+                    function getAntiForgeryToken() {
+                        return document.querySelector("input[name='__RequestVerificationToken']")?.value;
+                    }
+
+                    function showAddToListMessage(elementId, message) {
+                        const element = document.getElementById(elementId);
+                        element.innerText = message;
+                        element.classList.remove("d-none");
+                    }
+
+                    function hideAddToListMessages() {
+                        document.getElementById("add-to-list-error").classList.add("d-none");
+                        document.getElementById("add-to-list-success").classList.add("d-none");
+                    }
+
+                    function getAddToListModal() {
+                        return bootstrap.Modal.getOrCreateInstance(document.getElementById("add-to-list-modal"));
+                    }
+
+                    document.getElementById("add-to-list-open-button").onclick = () => {
+                        const detail = getDetail(currentId);
+
+                        hideAddToListMessages();
+                        document.getElementById("add-to-list-amount").value = "1";
+                        document.getElementById("add-to-list-product-name").innerText = detail.DisplayName;
+
+                        getAddToListModal().show();
+                    };
+
+                    document.getElementById("add-to-list-form").onsubmit = async e => {
+                        e.preventDefault();
+
+                        hideAddToListMessages();
+
+                        const submitButton = document.getElementById("add-to-list-submit-button");
+                        const amount = Number(document.getElementById("add-to-list-amount").value);
+
+                        if (!Number.isFinite(amount) || amount <= 0) {
+                            showAddToListMessage("add-to-list-error", "Кількість має бути більшою за нуль.");
+                            return;
+                        }
+
+                        submitButton.disabled = true;
+
+                        try {
+                            const response = await fetch(addToListUrl, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "RequestVerificationToken": getAntiForgeryToken()
+                                },
+                                body: JSON.stringify({
+                                    productId: currentId,
+                                    amount
+                                })
+                            });
+
+                            const result = await response.json().catch(() => null);
+
+                            if (!response.ok || result?.success !== true) {
+                                showAddToListMessage(
+                                    "add-to-list-error",
+                                    result?.message ?? "Товар не було додано до списку."
+                                );
+                                return;
+                            }
+
+                            showAddToListMessage("add-to-list-success", "Товар додано до списку.");
+
+                            window.setTimeout(() => {
+                                getAddToListModal().hide();
+                            }, 700);
+                        } catch {
+                            showAddToListMessage("add-to-list-error", "Запит не виконано. Спробуйте ще раз.");
+                        } finally {
+                            submitButton.disabled = false;
+                        }
+                    };
+        }
+
+        document.querySelectorAll("input[name='mode']").forEach(radio => {
+            radio.onchange = e => {
+                currentMode = e.target.value;
+                renderChart();
+                renderLegend();
+            };
+        });
+
+        updateUI();
+    </script>
+}

@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 
 namespace Infrastructure;
 
@@ -36,7 +35,7 @@ public static class ApplicationBuilderExtension
         this IHostApplicationBuilder builder
     )
     {
-        var config = builder.Configuration;
+        var config = builder.Configuration.GetSection("ShopDataRetrievers");
         foreach (var shop in Enum.GetValues<Shop>())
         {
             if (shop is Shop.Fozzy)
@@ -44,7 +43,7 @@ public static class ApplicationBuilderExtension
                 builder.Services.AddDataRetrieverOptions<FozzyDataRetrieverOptions>(
                     config,
                     shop,
-                    Options.DefaultName
+                    shop.ToString()
                 );
                 continue;
             }
@@ -57,9 +56,7 @@ public static class ApplicationBuilderExtension
         builder
             .Services.AddOptions<ShopProductProviderOptions>()
             .Configure(o =>
-                o.DelayBetweenRequests = config
-                    .GetSection("ShopDataRetrievers:DelayBetweenRequests")
-                    .Get<TimeSpan>()
+                o.DelayBetweenRequests = config.GetSection("DelayBetweenRequests").Get<TimeSpan>()
             )
             .ValidateDataAnnotations()
             .ValidateOnStart();
@@ -73,7 +70,7 @@ public static class ApplicationBuilderExtension
 
     private static IServiceCollection AddDataRetrieverOptions<T>(
         this IServiceCollection services,
-        IConfigurationManager config,
+        IConfiguration config,
         Shop shop,
         string name
     )
@@ -81,7 +78,7 @@ public static class ApplicationBuilderExtension
     {
         services
             .AddOptions<T>(name)
-            .Bind(config.GetSection($"ShopDataRetrievers:{shop}"))
+            .Bind(config.GetSection($"{shop}"))
             .Configure(options =>
             {
                 options.RetrieveLimit = config.GetSection("CountOfProductsToRetrieve").Get<int>();

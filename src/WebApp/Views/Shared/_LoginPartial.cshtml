@@ -5,16 +5,17 @@
                 <h5 class="modal-title" id="loginModalLabel">Вхід / Реєстрація</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <ul class="nav nav-tabs" id="authTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link active" id="login-tab" data-bs-toggle="tab" href="#login" role="tab"
-                        aria-controls="login" aria-selected="true">Вхід</a>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" id="register-tab" data-bs-toggle="tab" href="#register" role="tab"
-                        aria-controls="register" aria-selected="false">Реєстрація</a>
-                </li>
-            </ul>
+            <div class="nav nav-tabs" id="authTabs" role="tablist">
+                <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login"
+                        type="button" role="tab" aria-controls="login" aria-selected="true">
+                    Вхід
+                </button>
+
+                <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button"
+                        role="tab" aria-controls="register" aria-selected="false">
+                    Реєстрація
+                </button>
+            </div>
             <div class="tab-content" id="authTabsContent">
                 <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
                     <form id="loginForm" method="post">
@@ -54,12 +55,12 @@
                             <div class="mb-3">
                                 <label for="registerPassword" class="form-label">Пароль</label>
                                 <input type="password" class="form-control" id="registerPassword" name="password"
-                                    required>
+                                       required>
                             </div>
                             <div class="mb-3">
                                 <label for="registerConfirmPassword" class="form-label">Підтвердження паролю</label>
                                 <input type="password" class="form-control" id="registerConfirmPassword"
-                                    name="passwordDup" required>
+                                       name="passwordDup" required>
                             </div>
                         </div>
                         <div class="modal-footer">

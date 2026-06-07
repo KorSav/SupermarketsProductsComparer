@@ -22,13 +22,40 @@ namespace Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProduct", b =>
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfPriceHistory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ParsedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("UnifiedPrice")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("PriceHistories");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProduct", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(10, 4)
@@ -46,17 +73,16 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<decimal>("Price")
-                        .HasPrecision(8, 2)
-                        .HasColumnType("numeric(8,2)");
+                    b.Property<string>("NameSuffix")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ProductGroupId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Shop")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<decimal>("UnifiedPrice")
-                        .HasPrecision(8, 2)
-                        .HasColumnType("numeric(8,2)");
 
                     b.Property<string>("Unit")
                         .IsRequired()
@@ -64,10 +90,139 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name", "Shop")
+                    b.HasIndex("ProductGroupId");
+
+                    b.HasIndex("Name", "Shop", "Amount", "Unit")
                         .IsUnique();
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProductGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("ProductGroups");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProductList", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("ProductLists");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProductListEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(10, 4)
+                        .HasColumnType("numeric(10,4)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductListId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductListId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("ProductListEntries");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfPurchase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Date");
+
+                    b.ToTable("Purchases");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfPurchaseEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("MeasureCount")
+                        .HasPrecision(10, 4)
+                        .HasColumnType("numeric(10,4)");
+
+                    b.Property<string>("MeasureUnit")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PurchaseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Shop")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("SpentAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("PurchaseId");
+
+                    b.ToTable("PurchaseEntries");
                 });
 
             modelBuilder.Entity("Infrastructure.Repository.Entities.EfRequest", b =>
@@ -105,6 +260,10 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -113,16 +272,119 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Surname")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("Name", "Surname")
+                    b.HasIndex("Name", "Email")
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfPriceHistory", b =>
+                {
+                    b.HasOne("Infrastructure.Repository.Entities.EfProduct", "Product")
+                        .WithMany("PriceHistory")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProduct", b =>
+                {
+                    b.HasOne("Infrastructure.Repository.Entities.EfProductGroup", "ProductGroup")
+                        .WithMany()
+                        .HasForeignKey("ProductGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductGroup");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProductList", b =>
+                {
+                    b.HasOne("Infrastructure.Repository.Entities.EfUser", "User")
+                        .WithOne("ProductList")
+                        .HasForeignKey("Infrastructure.Repository.Entities.EfProductList", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProductListEntry", b =>
+                {
+                    b.HasOne("Infrastructure.Repository.Entities.EfProduct", "Product")
+                        .WithMany("ProductListEntries")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Infrastructure.Repository.Entities.EfProductList", "ProductList")
+                        .WithMany("Entries")
+                        .HasForeignKey("ProductListId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductList");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfPurchase", b =>
+                {
+                    b.HasOne("Infrastructure.Repository.Entities.EfUser", "User")
+                        .WithMany("Purchases")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfPurchaseEntry", b =>
+                {
+                    b.HasOne("Infrastructure.Repository.Entities.EfProduct", "Product")
+                        .WithMany("PurchaseEntries")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Infrastructure.Repository.Entities.EfPurchase", "Purchase")
+                        .WithMany("Entries")
+                        .HasForeignKey("PurchaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Purchase");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProduct", b =>
+                {
+                    b.Navigation("PriceHistory");
+
+                    b.Navigation("ProductListEntries");
+
+                    b.Navigation("PurchaseEntries");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfProductList", b =>
+                {
+                    b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfPurchase", b =>
+                {
+                    b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("Infrastructure.Repository.Entities.EfUser", b =>
+                {
+                    b.Navigation("ProductList");
+
+                    b.Navigation("Purchases");
                 });
 #pragma warning restore 612, 618
         }

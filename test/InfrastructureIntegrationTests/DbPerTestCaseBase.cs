@@ -55,7 +55,10 @@ public abstract class DbPerTestCaseBase(DbContainerFixture fixture) : IAsyncLife
         }
         fixture.Logger.Information("{DB} start executing TC", _dbName);
         Services = _host.Services;
+        await OnInitializeFinishedAsync();
     }
+
+    protected virtual Task OnInitializeFinishedAsync() => Task.CompletedTask;
 
     public async ValueTask DisposeAsync()
     {

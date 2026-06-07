@@ -6,9 +6,10 @@ namespace ApplicationCore.Utils;
 public class PaginatedList<T> : List<T>
 {
     public int PageNo { get; private set; }
-    public int PagesCount { get; private set; }
+    public int TotalItems { get; private set; }
     public int PageSize { get; private set; }
 
+    public int PagesCount => (TotalItems + PageSize - 1) / PageSize;
     public bool HasPreviousPage => PageNo > 0;
     public bool HasNextPage => PageNo < PagesCount - 1;
 
@@ -16,7 +17,7 @@ public class PaginatedList<T> : List<T>
         : base(items)
     {
         PageSize = size;
-        PagesCount = (totalItems + size - 1) / PageSize;
+        TotalItems = totalItems;
         PageNo = page;
     }
 
@@ -29,7 +30,7 @@ public class PaginatedList<T> : List<T>
         return new PaginatedList<M>(resItems)
         {
             PageNo = PageNo,
-            PagesCount = PagesCount,
+            TotalItems = TotalItems,
             PageSize = PageSize,
         };
     }

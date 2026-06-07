@@ -1,0 +1,183 @@
+@using System.Globalization
+@using WebApp.Mappings
+@model WebApp.Models.ProductListViewModel
+
+@{
+    ViewData["Title"] = "Поточний список продуктів";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Поточний список продуктів</h1>
+        <p class="text-muted mb-0">
+            Продукти, які ви додали до списку запланованих покупок.
+        </p>
+    </div>
+
+    <div class="text-md-end">
+        <div class="text-muted small">Орієнтовна сума</div>
+        <div class="h4 mb-0">
+            <span id="productListTotal">@Model.TotalPrice.ToString("0.00")</span> грн
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<div id="productListAlert" class="alert d-none" role="alert"></div>
+
+@if (Model.IsEmpty)
+{
+    <div id="emptyProductListState" class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-basket display-5 text-muted"></i>
+            <h2 class="h5 mt-3">Ваш список продуктів порожній</h2>
+            <p class="text-muted mb-0">
+                Додайте продукти з результатів пошуку, щоб сформувати список покупок.
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    <div id="productListContent">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <colgroup>
+                            <col style="width: 96px;" />
+                            <col />
+                            <col style="width: 110px;" />
+                            <col style="width: 100px;" />
+                            <col style="width: 100px;" />
+                            <col style="width: 110px;" />
+                            <col style="width: 120px;" />
+                        </colgroup>
+                        <thead class="table-light">
+                            <tr>
+                                <th>Продукт</th>
+                                <th>Назва</th>
+                                <th>Ціна</th>
+                                <th>Кількість</th>
+                                <th>Всього</th>
+                                <th>Вартість</th>
+                                <th>Дії</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="productListTableBody">
+                            @foreach (var shopGroup in Model.Entries.GroupBy(e => e.Product.Shop).OrderBy(g => g.Key.ToLocalString()))
+                            {
+                                <tr class="table-secondary">
+                                    <td colspan="7" class="fw-semibold">
+                                        <i class="bi bi-shop me-2"></i>
+                                        @shopGroup.Key.ToLocalString()
+                                    </td>
+                                </tr>
+
+                                @foreach (var entry in shopGroup)
+                                {
+                                    var finalMeasureAmount = entry.Amount * entry.Product.Measure.Count;
+
+                                    <tr data-entry-id="@entry.EntryId">
+                                        <td>
+                                            <img src="@entry.Product.LinkImage"
+                                                 alt="@entry.Product.DisplayName"
+                                                 class="rounded border bg-white"
+                                                 style="width: 96px; height: 80px; object-fit: contain;" />
+                                        </td>
+
+                                        <td>
+                                            <div class="fw-semibold">@entry.Product.DisplayName</div>
+                                            <a href="@entry.Product.LinkProduct"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="small text-decoration-none">
+                                                Відкрити сторінку товару
+                                                <i class="bi bi-box-arrow-up-right"></i>
+                                            </a>
+                                        </td>
+
+                                        <td class="text-nowrap">
+                                            <span class="fw-semibold">
+                                                @entry.Product.Price.ToString("0.00")
+                                            </span>
+                                            грн
+                                        </td>
+
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number"
+                                                       class="form-control product-amount-input"
+                                                       value="@entry.Amount.ToString("0.###", CultureInfo.InvariantCulture)"
+                                                       min="0"
+                                                       step="0.25"
+                                                       inputmode="decimal"
+                                                       aria-label="Кількість для покупки" />
+                                                <button type="button"
+                                                        class="btn btn-outline-primary update-entry-amount-btn"
+                                                        aria-label="Оновити кількість">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <span class="entry-final-measure">
+                                                @finalMeasureAmount.ToString("0.###")
+                                                @entry.Product.Measure.Unit.ToLocalString()
+                                            </span>
+                                        </td>
+
+                                        <td class="text-nowrap">
+                                            <span class="fw-semibold entry-total">
+                                                @entry.TotalPrice.ToString("0.00")
+                                            </span>
+                                            грн
+                                        </td>
+
+                                        <td>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger remove-entry-btn">
+                                                <i class="bi bi-trash"></i>
+                                                Видалити
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mt-4">
+            <div class="text-muted small">
+                Зміна кількості впливає лише на ваш список покупок, а не на дані товару з магазину.
+            </div>
+
+            <button type="button"
+                    id="storeProductListBtn"
+                    class="btn btn-success">
+                <i class="bi bi-receipt"></i>
+                Зберегти як покупку
+            </button>
+        </div>
+    </div>
+
+    <div id="emptyProductListState" class="card border-0 shadow-sm d-none">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-basket display-5 text-muted"></i>
+            <h2 class="h5 mt-3">Ваш список продуктів порожній</h2>
+            <p class="text-muted mb-0">
+                Додайте продукти з результатів пошуку, щоб сформувати список покупок.
+            </p>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/product-list.js" asp-append-version="true"></script>
+}
